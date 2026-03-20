@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue()],
     // Support for subpath via --base during build or VITE_BASE_URL env
-    base: env.VITE_BASE_URL || '/',
+    // Setting to './' for relative paths for portability
+    base: './',
     server: {
       proxy: {
         '^(/.*)?/api': {

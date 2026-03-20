@@ -5,7 +5,8 @@ export const useAppStore = defineStore('app', {
     currentUser: 'Operator', // Default
     users: ['Operator', 'QA'],
     // apiUrl: 'http://localhost:8000/api'
-    apiUrl: (import.meta.env.BASE_URL.replace(/\/$/, '') || '') + '/api' // Use proxy with base path
+    // Dynamically determine API URL relative to the current base
+    apiUrl: (window._APP_BASE_ || '').replace(/\/$/, '') + '/api'
   }),
   actions: {
     setCurrentUser(user) {
