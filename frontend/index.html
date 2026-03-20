@@ -2,6 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Detect the base path dynamically.
+      // Nginx can replace the placeholder below with the actual subpath.
+      // If not replaced, it defaults to /
+      window._APP_BASE_ = 'BASE_URL_PLACEHOLDER';
+
+      // If the placeholder hasn't been replaced by Nginx, we try to detect it.
+      if (window._APP_BASE_ === 'BASE_URL_PLACEHOLDER') {
+          // Default to root
+          window._APP_BASE_ = '/';
+      }
+
+      // Ensure the base path always ends with a trailing slash for correct relative asset resolution
+      if (!window._APP_BASE_.endsWith('/')) {
+          window._APP_BASE_ += '/';
+      }
+
+      // Update the base tag to help with relative assets
+      const base = document.createElement('base');
+      base.href = window._APP_BASE_;
+      document.head.appendChild(base);
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>

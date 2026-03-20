@@ -5,11 +5,8 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-# Set VITE_BASE_URL if needed
-ARG VITE_BASE_URL=/
-ENV VITE_BASE_URL=$VITE_BASE_URL
-
-RUN npm run build -- --base=$VITE_BASE_URL
+# Build with relative base path for portability
+RUN npm run build -- --base=./
 
 # Production stage
 FROM nginx:stable-alpine as production-stage
