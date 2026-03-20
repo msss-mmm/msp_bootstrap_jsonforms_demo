@@ -4,7 +4,8 @@ import TravelerDetail from '../views/TravelerDetail.vue'
 import InstructionDetail from '../views/InstructionDetail.vue'
 
 const router = createRouter({
-  history: createWebHistory(), // Remove base url for now or ensure it works
+  // Use the environment variable VITE_BASE_URL (or default to '/')
+  history: createWebHistory(import.meta.env.VITE_BASE_URL || '/'),
   routes: [
     {
       path: '/',
