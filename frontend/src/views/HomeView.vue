@@ -1,42 +1,76 @@
 <template>
-  <div>
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">Documents</h1>
-      <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-          <button type="button" class="btn btn-sm btn-outline-primary" @click="createDoc('traveler')">New Work Order Traveler</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" @click="createDoc('instructions')">New Instructions</button>
-        </div>
+  <div class="home-container">
+    <div class="action-bar">
+      <h2>Documents</h2>
+      <div class="actions">
+        <el-dropdown @command="handleNewDocument">
+          <el-button type="primary">
+            New Document<el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="template in templates"
+                                :key="template.id"
+                                :command="template"
+                                :disabled="!template.is_active">
+                {{ template.name }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
 
-    <div class="table-responsive">
-      <table class="table table-striped table-sm">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Name</th>
-            <th scope="col">Type</th>
-            <th scope="col">Created</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="doc in documents" :key="doc.id">
-            <td>{{ doc.id }}</td>
-            <td>{{ doc.name }}</td>
-            <td>{{ doc.doc_type === 'traveler' ? 'Work Order Traveler' : 'Instructions' }}</td>
-            <td>{{ new Date(doc.created_at).toLocaleString() }}</td>
-            <td>
-              <router-link :to="`/${doc.doc_type}/${doc.id}`" class="btn btn-sm btn-primary">View/Edit</router-link>
-            </td>
-          </tr>
-          <tr v-if="documents.length === 0">
-             <td colspan="5" class="text-center">No documents found. Click "New" to create one.</td>
-          </tr>
-        </tbody>
-      </table>
+    <el-table :data="documents" style="width: 100%" stripe border>
+      <el-table-column prop="id" label="#" width="80" />
+      <el-table-column prop="title" label="Title" />
+      <el-table-column prop="template_name" label="Template" />
+      <el-table-column label="Created" width="180">
+        <template #default="scope">
+          {{ new Date(scope.row.created_at).toLocaleString() }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Actions" width="150" align="center">
+        <template #default="scope">
+          <el-button size="small" type="primary" @click="$router.push(`/documents/${scope.row.id}`)">View</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <div class="action-bar" style="margin-top: 50px;">
+      <h2>Templates</h2>
     </div>
+    <el-table :data="templates" style="width: 100%" stripe border>
+      <el-table-column prop="id" label="#" width="80" />
+      <el-table-column prop="name" label="Name" />
+      <el-table-column label="Status" width="100">
+        <template #default="scope">
+          <el-tag :type="scope.row.is_active ? 'success' : 'info'">
+            {{ scope.row.is_active ? 'Active' : 'Inactive' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="Actions" width="150" align="center">
+        <template #default="scope">
+          <el-button size="small" @click="$router.push(`/templates/${scope.row.id}/edit`)">Edit</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- Dialog for new document title -->
+    <el-dialog v-model="dialogVisible" title="New Document" width="30%">
+      <el-form label-position="top">
+        <el-form-item label="Document Title">
+          <el-input v-model="newDocTitle" placeholder="Enter document title (e.g., SN-12345)" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">Cancel</el-button>
+          <el-button type="primary" @click="confirmCreateDocument">Create</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -44,27 +78,71 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
+import { ArrowDown } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const store = useAppStore()
 const documents = ref([])
+const templates = ref([])
 
-const fetchDocs = async () => {
+const dialogVisible = ref(false)
+const newDocTitle = ref('')
+const selectedTemplate = ref(null)
+
+const fetchData = async () => {
   try {
-    const response = await axios.get(`${store.apiUrl}/documents/`)
-    documents.value = response.data
+    const docsRes = await axios.get(`${store.apiUrl}/documents/`)
+    documents.value = docsRes.data
+    const templatesRes = await axios.get(`${store.apiUrl}/templates/`)
+    templates.value = templatesRes.data
   } catch (error) {
-    console.error('Error fetching documents:', error)
+    console.error('Error fetching data:', error)
   }
 }
 
-const createDoc = async (type) => {
+const handleNewDocument = (template) => {
+  selectedTemplate.value = template
+  newDocTitle.value = `${template.name} - ${new Date().toLocaleDateString()}`
+  dialogVisible.value = true
+}
+
+const confirmCreateDocument = async () => {
+  if (!newDocTitle.value) {
+    ElMessage.warning('Please enter a document title')
+    return
+  }
+
   try {
-    await axios.post(`${store.apiUrl}/documents/create_from_template/`, { doc_type: type })
-    fetchDocs()
+    const res = await axios.post(`${store.apiUrl}/documents/`, {
+      template: selectedTemplate.value.id,
+      title: newDocTitle.value,
+      data: {}
+    })
+    dialogVisible.value = false
+    ElMessage.success('Document created')
+    fetchData()
   } catch (error) {
     console.error('Error creating document:', error)
+    ElMessage.error('Failed to create document')
   }
 }
 
-onMounted(fetchDocs)
+onMounted(fetchData)
 </script>
+
+<style scoped>
+.home-container {
+  padding: 20px;
+}
+
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.action-bar h2 {
+  margin: 0;
+}
+</style>
