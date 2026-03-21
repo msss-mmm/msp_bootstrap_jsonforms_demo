@@ -1,35 +1,99 @@
 <template>
-  <div class="container-fluid p-0 h-100 d-flex flex-column">
-    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-2 shadow">
-      <router-link class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" to="/">Mfg Execution System</router-link>
-      <div class="d-flex align-items-center">
-        <label class="text-white me-2 mb-0">Logged in as:</label>
-        <select class="form-select form-select-sm" :value="store.currentUser" @change="onUserChange">
-          <option v-for="user in store.users" :key="user" :value="user">{{ user }}</option>
-        </select>
+  <el-container class="app-container">
+    <el-header class="header">
+      <div class="header-left">
+        <router-link to="/" class="logo">Mfg Execution System</router-link>
+        <el-menu mode="horizontal" :ellipsis="false" router class="header-menu" :default-active="$route.path">
+          <el-menu-item index="/">Home</el-menu-item>
+          <el-menu-item index="/templates/new">Create Template</el-menu-item>
+        </el-menu>
       </div>
-    </header>
+      <div class="header-right">
+        <span class="user-label">Logged in as:</span>
+        <el-dropdown @command="onUserChange">
+          <span class="el-dropdown-link">
+            {{ store.currentUser }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="user in store.users" :key="user" :command="user">
+                {{ user }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+    </el-header>
 
-    <main class="container mt-4 flex-grow-1">
+    <el-main>
       <router-view />
-    </main>
-  </div>
+    </el-main>
+  </el-container>
 </template>
 
 <script setup>
 import { useAppStore } from './stores/app'
+import { ArrowDown } from '@element-plus/icons-vue'
 const store = useAppStore()
 
-const onUserChange = (e) => {
-  store.setCurrentUser(e.target.value)
+const onUserChange = (user) => {
+  store.setCurrentUser(user)
 }
 </script>
 
 <style>
-@import "bootstrap/dist/css/bootstrap.min.css";
-@import "bootstrap-icons/font/bootstrap-icons.css";
-
 html, body, #app {
   height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+
+.app-container {
+  height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #dcdfe6;
+  background-color: #fff;
+  padding: 0 20px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: #409eff;
+  margin-right: 40px;
+}
+
+.header-menu {
+  border-bottom: none !important;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-label {
+  margin-right: 10px;
+  font-size: 0.9rem;
+  color: #606266;
+}
+
+.el-dropdown-link {
+  cursor: pointer;
+  color: #409eff;
+  display: flex;
+  align-items: center;
 }
 </style>

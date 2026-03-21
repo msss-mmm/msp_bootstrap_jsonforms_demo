@@ -1,12 +1,11 @@
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework import routers
+from rest_framework.routers import DefaultRouter
 from core import views
 
-router = routers.DefaultRouter()
-router.register(r'documents', views.DocumentViewSet)
-router.register(r'traveler-steps', views.TravelerStepViewSet)
-router.register(r'instruction-steps', views.InstructionStepViewSet)
+router = DefaultRouter()
+router.register(r'templates', views.TemplateViewSet)
+router.register(r'documents', views.DocumentInstanceViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
