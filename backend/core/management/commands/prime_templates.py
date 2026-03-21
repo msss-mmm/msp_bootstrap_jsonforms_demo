@@ -1,0 +1,52 @@
+import os
+import json
+from django.core.management.base import BaseCommand
+from django.conf import settings
+from core.models import Template
+
+class Command(BaseCommand):
+    help = 'Prime the database from the templates directory'
+
+    def handle(self, *args, **options):
+        templates_dir = os.path.join(settings.BASE_DIR, 'templates')
+        if not os.path.exists(templates_dir):
+            self.stdout.write(self.style.WARNING(f'Templates directory {templates_dir} does not exist.'))
+            return
+
+        for filename in os.listdir(templates_dir):
+            if filename.endswith('.json'):
+                filepath = os.path.join(templates_dir, filename)
+                try:
+                    with open(filepath, 'r') as f:
+                        data = json.load(f)
+
+                    # Ensure compatibility with FormCreate structure
+                    name = data.get('name')
+                    if not name:
+                        continue
+
+                    rule = data.get('rule', [])
+                    options_data = data.get('options', {})
+                    is_active = data.get('is_active', True)
+                    description = data.get('description', '')
+
+                    # Simple check if it's already a FormCreate rule
+                    # If it's a legacy template, it might need conversion later
+
+                    template, created = Template.objects.update_or_create(
+                        name=name,
+                        defaults={
+                            'rule': rule,
+                            'options': options_data,
+                            'is_active': is_active,
+                            'description': description
+                        }
+                    )
+
+                    if created:
+                        self.stdout.write(self.style.SUCCESS(f'Created template: {name}'))
+                    else:
+                        self.stdout.write(self.style.SUCCESS(f'Updated template: {name}'))
+
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f'Error processing {filename}: {str(e)}'))
