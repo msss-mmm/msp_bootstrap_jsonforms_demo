@@ -1,89 +1,74 @@
 import json
-import os
 from django.core.management.base import BaseCommand
-from core.models import Document, Traveler, TravelerStep, Instruction, InstructionStep
-from django.utils import timezone
+from core.models import Template, DocumentInstance
 
 class Command(BaseCommand):
-    help = 'Seed the database with initial computer-themed documents'
+    help = 'Seed the database with initial computer-themed templates and documents'
 
     def handle(self, *args, **kwargs):
         # Clear existing
-        Document.objects.all().delete()
+        DocumentInstance.objects.all().delete()
+        Template.objects.all().delete()
 
-        # 1. Create a Traveler document
-        traveler_doc = Document.objects.create(
-            doc_type=Document.TRAVELER,
-            name="Work Order Traveler - Computer Build A-100"
-        )
-        traveler = Traveler.objects.create(
-            document=traveler_doc,
-            work_order="WO-2024-001",
-            warehouse="Main Warehouse - Sector 7",
-            part_number="CB-X1-PRO",
-            quantity=5,
-            serial_number="SN-A100-01\nSN-A100-02\nSN-A100-03\nSN-A100-04\nSN-A100-05"
-        )
-
-        traveler_steps = [
-            (10, "Circuit Board Install"),
-            (20, "Power Supply Install"),
-            (30, "Chips & RAM Install"),
-            (40, "Hard Drive & Case Finish"),
-            (50, "Final Quality Check")
+        # 1. Create a Traveler Template
+        traveler_rule = [
+            {"type":"input", "field":"work_order", "title":"Work Order", "value":"WO-2024-001"},
+            {"type":"input", "field":"part_number", "title":"Part Number", "value":"CB-X1-PRO"},
+            {"type":"inputNumber", "field":"quantity", "title":"Quantity", "value":5},
+            {"type":"OperatorApprove", "field":"op_app_10", "title":"Step 10: Circuit Board Install"},
+            {"type":"QAApprove", "field":"qa_app_10", "title":"QA Step 10"},
+            {"type":"input", "field":"notes_10", "title":"Notes Step 10", "value":"All screws tightened."},
+            {"type":"OperatorApprove", "field":"op_app_20", "title":"Step 20: Power Supply Install"},
+            {"type":"QAApprove", "field":"qa_app_20", "title":"QA Step 20"}
         ]
 
-        for num, label in traveler_steps:
-            step = TravelerStep.objects.create(
-                traveler=traveler,
-                step_number=num,
-                label=label
-            )
-            # Pre-fill step 10 to show progress
-            if num == 10:
-                step.operator_name = "Operator"
-                step.operator_timestamp = timezone.now()
-                step.qa_name = "QA"
-                step.qa_timestamp = timezone.now()
-                step.notes = "Circuit board installed correctly. All screws tightened."
-                step.save()
-            elif num == 20:
-                step.notes = "Waiting for power supply arrival."
-                step.save()
-
-        # 2. Create an Instructions document
-        instruction_doc = Document.objects.create(
-            doc_type=Document.INSTRUCTIONS,
-            name="Assembly Instructions - Gaming PC"
-        )
-        instruction = Instruction.objects.create(
-            document=instruction_doc,
-            part_number="GAMING-PC-01",
-            revision="B",
-            serial_number="VARIOUS",
-            description="High-end gaming PC assembly with liquid cooling."
+        traveler_template = Template.objects.create(
+            name="Computer Assembly Traveler",
+            description="Manufacturing traveler for computer assembly",
+            rule=traveler_rule,
+            options={"form":{"labelPosition":"top"}}
         )
 
-        instruction_steps = [
-            (1, "Install the motherboard and secure with {{entry}} screws.", ["9"]),
-            (2, "Mount the power supply. Connect the main {{entry}} pin power cable.", ["24"]),
-            (3, "Insert {{entry}} sticks of RAM into the slots.", ["4"]),
-            (4, "Apply thermal paste and mount the CPU cooler. Verify temp is {{entry}} C.", ["35"])
+        # Create an instance
+        DocumentInstance.objects.create(
+            template=traveler_template,
+            title="Traveler SN-A100-01",
+            data={
+                "work_order": "WO-2024-001",
+                "part_number": "CB-X1-PRO",
+                "quantity": 5,
+                "op_app_10": {"name": "Operator", "timestamp": "2024-03-21T10:00:00Z"},
+                "qa_app_10": {"name": "QA", "timestamp": "2024-03-21T10:05:00Z"},
+                "notes_10": "Circuit board installed correctly. All screws tightened."
+            }
+        )
+
+        # 2. Create an Instructions Template
+        instruction_rule = [
+            {"type":"input", "field":"part_number", "title":"Part Number", "value":"GAMING-PC-01"},
+            {"type":"input", "field":"revision", "title":"Revision", "value":"B"},
+            {"type":"text", "title":"Step 1: Install the motherboard and secure with 9 screws."},
+            {"type":"OperatorApprove", "field":"op_app_1", "title":"Operator Approval Step 1"},
+            {"type":"QAApprove", "field":"qa_app_1", "title":"QA Approval Step 1"}
         ]
 
-        for num, text, entries in instruction_steps:
-            step = InstructionStep.objects.create(
-                instruction=instruction,
-                step_number=num,
-                instruction_text=text,
-                entry_values=entries
-            )
-            # Pre-fill step 1
-            if num == 1:
-                step.operator_name = "Operator"
-                step.operator_timestamp = timezone.now()
-                step.qa_name = "QA"
-                step.qa_timestamp = timezone.now()
-                step.save()
+        instruction_template = Template.objects.create(
+            name="Computer Assembly Instructions",
+            description="Assembly instructions for Gaming PC",
+            rule=instruction_rule,
+            options={"form":{"labelPosition":"top"}}
+        )
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded computer-themed documents'))
+        # Create an instance
+        DocumentInstance.objects.create(
+            template=instruction_template,
+            title="Instructions Batch-2024-01",
+            data={
+                "part_number": "GAMING-PC-01",
+                "revision": "B",
+                "op_app_1": {"name": "Operator", "timestamp": "2024-03-21T11:00:00Z"},
+                "qa_app_1": {"name": "QA", "timestamp": "2024-03-21T11:10:00Z"}
+            }
+        )
+
+        self.stdout.write(self.style.SUCCESS('Successfully seeded new FormCreate templates and documents'))
