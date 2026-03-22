@@ -1,6 +1,7 @@
 from django.db import models
 import json
 import os
+import urllib.parse
 from django.conf import settings
 
 class Template(models.Model):
@@ -15,12 +16,27 @@ class Template(models.Model):
     def __str__(self):
         return self.name
 
+    def get_template_filename(self):
+        """Returns the filename for this template, maintaining backward compatibility."""
+        # Old format: name.lower().replace(' ', '_') + '_template.json'
+        old_filename = f"{self.name.lower().replace(' ', '_')}_template.json"
+        templates_dir = os.path.join(settings.BASE_DIR, 'templates')
+        old_filepath = os.path.join(templates_dir, old_filename)
+
+        if os.path.exists(old_filepath):
+            return old_filename
+
+        # New format (safe): URL-encoded name
+        safe_name = urllib.parse.quote(self.name, safe='')
+        return f"{safe_name}_template.json"
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # Sync to directory
         templates_dir = os.path.join(settings.BASE_DIR, 'templates')
         os.makedirs(templates_dir, exist_ok=True)
-        filename = f"{self.name.lower().replace(' ', '_')}_template.json"
+
+        filename = self.get_template_filename()
         filepath = os.path.join(templates_dir, filename)
         data = {
             "name": self.name,
