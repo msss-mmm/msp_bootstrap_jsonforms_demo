@@ -72,6 +72,8 @@ const fetchTemplate = async () => {
       console.error(error)
       ElMessage.error('Failed to load template')
     }
+  } else if (route.query.name) {
+    templateName.value = route.query.name
   }
 }
 

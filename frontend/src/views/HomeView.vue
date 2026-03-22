@@ -39,6 +39,9 @@
 
     <div class="action-bar" style="margin-top: 50px;">
       <h2>Templates</h2>
+      <div class="actions">
+        <el-button type="primary" @click="handleNewTemplate">Create Template</el-button>
+      </div>
     </div>
     <el-table :data="templates" style="width: 100%" stripe border>
       <el-table-column prop="id" label="#" width="80" />
@@ -59,7 +62,7 @@
 
     <!-- Dialog for new document title -->
     <el-dialog v-model="dialogVisible" title="New Document" width="30%">
-      <el-form label-position="top">
+      <el-form label-position="top" @submit.prevent="confirmCreateDocument">
         <el-form-item label="Document Title">
           <el-input v-model="newDocTitle" placeholder="Enter document title (e.g., SN-12345)" />
         </el-form-item>
@@ -71,23 +74,43 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Dialog for new template name -->
+    <el-dialog v-model="templateDialogVisible" title="New Template" width="30%">
+      <el-form label-position="top" @submit.prevent="confirmCreateTemplate">
+        <el-form-item label="Template Name">
+          <el-input v-model="newTemplateName" placeholder="Enter template name (e.g., Quality Check)" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="templateDialogVisible = false">Cancel</el-button>
+          <el-button type="primary" @click="confirmCreateTemplate">Create</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const store = useAppStore()
+const router = useRouter()
 const documents = ref([])
 const templates = ref([])
 
 const dialogVisible = ref(false)
 const newDocTitle = ref('')
 const selectedTemplate = ref(null)
+
+const templateDialogVisible = ref(false)
+const newTemplateName = ref('')
 
 const fetchData = async () => {
   try {
@@ -125,6 +148,30 @@ const confirmCreateDocument = async () => {
     console.error('Error creating document:', error)
     ElMessage.error('Failed to create document')
   }
+}
+
+const handleNewTemplate = () => {
+  newTemplateName.value = `Template - ${new Date().toLocaleDateString()}`
+  templateDialogVisible.value = true
+}
+
+const confirmCreateTemplate = () => {
+  if (!newTemplateName.value) {
+    ElMessage.warning('Please enter a template name')
+    return
+  }
+
+  const nameExists = templates.value.some(t => t.name.toLowerCase() === newTemplateName.value.toLowerCase())
+  if (nameExists) {
+    ElMessage.warning('A template with this name already exists')
+    return
+  }
+
+  templateDialogVisible.value = false
+  router.push({
+    name: 'create-template',
+    query: { name: newTemplateName.value }
+  })
 }
 
 onMounted(fetchData)
