@@ -3,6 +3,7 @@
     <el-page-header @back="$router.push('/')">
       <template #content>
         <span class="text-large font-600 mr-3"> {{ isEdit ? 'Edit Template' : 'New Template' }} </span>
+        <el-tag v-if="templateStatus" :type="getStatusType(templateStatus)" style="margin-left: 10px;">{{ templateStatus }}</el-tag>
       </template>
       <template #extra>
         <div class="flex items-center">
@@ -30,6 +31,7 @@ const router = useRouter()
 const store = useAppStore()
 const designer = ref(null)
 const templateName = ref('')
+const templateStatus = ref('Active')
 const isEdit = computed(() => !!route.params.id)
 
 const designerConfig = {
@@ -76,11 +78,21 @@ const designerConfig = {
   ]
 }
 
+const getStatusType = (status) => {
+  switch (status) {
+    case 'Active': return 'success'
+    case 'Inactive': return 'info'
+    case 'Archived': return 'danger'
+    default: return ''
+  }
+}
+
 const fetchTemplate = async () => {
   if (isEdit.value) {
     try {
       const res = await axios.get(`${store.apiUrl}/templates/${route.params.id}/`)
       templateName.value = res.data.name
+      templateStatus.value = res.data.status || 'Active'
       // designer.value.setRule(res.data.rule)
       // designer.value.setOptions(res.data.options)
       // wait for component to be ready
@@ -112,7 +124,7 @@ const saveTemplate = async () => {
     name: templateName.value,
     rule: rule,
     options: options,
-    is_active: true
+    status: templateStatus.value
   }
 
   try {
