@@ -36,8 +36,24 @@ const designerConfig = {
   // Disable AI feature that makes requests to https://api.form-create.com
   showAi: false,
   ai: {
-    api: '',
-    token: ''
+    // Provide a non-empty but local/invalid URL to bypass the library's
+    // fallback logic that triggers a request if api is an empty string.
+    api: 'http://127.0.0.1/block-ai',
+    token: 'disabled'
+  },
+  // Override default component rules to remove external assets
+  component: {
+    // Prevent the Image component from defaulting to an external placeholder
+    elImage: {
+      rule() {
+        return {
+          type: 'elImage',
+          title: '',
+          style: { width: '100px', height: '100px' },
+          props: { src: '' } // Clear external example image
+        }
+      }
+    }
   },
   // Add custom components to the designer menu
   menu: [
