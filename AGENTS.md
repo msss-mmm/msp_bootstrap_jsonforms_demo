@@ -1,40 +1,40 @@
-# AGENTS.md: Manufacturing Execution & Document Pipeline (FormCreate Version)
+# System Specification: Manufacturing Execution & Document Pipeline
 
 ## Overview
-This document defines the **Digital Agents** responsible for transitioning a legacy "paper and binder" workflow into a secure, multi-user digital system. This version of the system uses **FormCreate** and **Element Plus** for a fully dynamic, schema-driven approach to document templates and instances.
+This document specifies the requirements for a Manufacturing Execution System (MES) designed to transition from paper-based workflows to a secure, multi-user digital platform. The system utilizes a dynamic, schema-driven approach to manage document templates and their resulting instances.
 
----
+## Recommended Technology Stack
+The system is designed to be technology-agnostic where possible, but the following stack is recommended for compatibility with the current implementation:
+- **Backend:** Django (Python) with REST API support.
+- **Frontend:** Vue 3 (Composition API) for a responsive single-page application.
+- **UI Framework:** Element Plus for consistent interface components.
+- **Dynamic Form Engine:** FormCreate & FormCreate Designer for visual template authoring and runtime rendering.
 
-## 1. The Template Architect (Dynamic Form Definitions)
-**Responsibility:** Manages the definition of documents using FormCreate JSON rules.
-*   **Low-Code Editor:** Provides a visual drag-and-drop designer for administrators to create document templates.
-*   **Schema Storage:** Stores document definitions (rules and options) as JSON in the database, with automated backups to the filesystem.
-*   **Version Control:** Ensures templates can be updated without breaking existing document instances.
+## Document and Template Lifecycle
+The system manages the lifecycle of form definitions (**Templates**) and their specific completions (**Document Instances**).
 
-## 2. The Workflow Agent (Custom Approvals & Logic)
-**Responsibility:** Enforces manufacturing logic within dynamic forms.
-*   **Digital Stamps:** Implements `OperatorApprove` and `QAApprove` custom FormCreate components.
-*   **Approval Logic:** Records `user_name` and `timestamp` directly within the document instance's data JSON.
-*   **Field Locking:** Can trigger the disabling of other form components once an approval is granted to ensure data integrity.
+### Template Lifecycle
+- **Active:** Available for selection when creating new document instances.
+- **Inactive:** Hidden from the "New Document" creation menu but still associated with existing instances.
+- **Archived:** Segregated from the main management view; templates in this state cannot be used for new documents. Templates can be restored to Active status from the archive.
 
-## 3. The Persistence Agent (JSON-Field Logic)
-**Responsibility:** Manages the storage and retrieval of all document data within a structured relational database.
-*   **Generic Instances:** All documents (Travelers, Instructions, etc.) are stored as `DocumentInstance` records.
-*   **JSON Data:** Real-time data entry is stored in a single `JSONField` (e.g., `data`), allowing for maximum flexibility in form design.
-*   **Template Sync:** Automatically synchronizes database templates with the `backend/templates/` directory for system portability and initialization.
+### Document Instance Lifecycle
+- **Active:** Fully editable and open for data entry.
+- **Locked:** Transitioned to a read-only state to prevent further modification. Locked documents can be unlocked to return to an Active state.
+- **Archived:** Removed from active lists and stored in a secondary archive view. Documents can be restored to Active status from the archive.
 
-## 4. The Interface Agent (Vue 3 + Element Plus)
-**Responsibility:** Renders the dynamic forms and management UI.
-*   **Element Plus:** Provides a modern, clean UI for all management and data-entry views.
-*   **Dynamic Rendering:** Uses the FormCreate engine to turn JSON rules into interactive Vue 3 components at runtime.
-*   **Subpath Portability:** Supports deployment at any URL subpath through runtime environment detection.
+## User Interaction Logic
+- **Privilege Management:** User actions and access levels are governed by configurable privileges. These privileges determine which roles can view, edit, lock, or archive specific documents and templates. System administrators are responsible for the configuration of these role-based permissions.
+- **Workflow Approvals:** The system incorporates custom approval components (e.g., Operator and QA signatures). These components record the user identity and a timestamp directly into the document's data schema.
+- **State-Based UI:** The user interface dynamically adjusts based on the status of the entity (e.g., disabling form fields or hiding action buttons for locked documents) and the current user's privileges.
 
----
+## Document Editor
+- **Low-Code Designer:** A visual, drag-and-drop interface allows for the creation of complex document templates without writing code.
+- **JSON Schema:** All template definitions and form options are stored as structured JSON, enabling flexible data models and runtime form generation.
+- **Storage Synchronization:** To ensure portability and ease of initialization, template definitions are synchronized between the primary database and a local filesystem directory (e.g., as `.json` files).
 
-### Technical Stack Summary
-*   **Backend:** Python 3.13 (Django 6.0+)
-*   **Database:** SQLite (with JSON column support)
-*   **Frontend Strategy:**
-    *   **Vue 3** (Composition API)
-    *   **Element Plus** UI Framework
-    *   **FormCreate** + **FormCreate Designer** for dynamic form management.
+## Network & Security Constraints
+- **Strict Local Access:** The application must be entirely self-contained. There must be no runtime client-side or server-side access to any hosts outside of the designated backend environment.
+- **Local Asset Serving:** All dependencies, including scripts, styles, fonts, and icons, must be served from the application's own infrastructure. The use of Content Delivery Networks (CDNs) or external asset hosting is prohibited.
+- **Telemetry & Tracking:** The system must not contain any tracking, telemetry, or analytics code that makes outbound requests to third-party services.
+- **External API Restrictions:** Any features within third-party components that attempt to contact external APIs (e.g., AI-assisted design features, automatic updates, or cloud-based previews) must be explicitly disabled at the configuration level.
