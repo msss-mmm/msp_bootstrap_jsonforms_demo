@@ -4,7 +4,7 @@
       <el-tab-pane label="Main" name="main">
         <div class="action-bar">
           <h2>Documents</h2>
-          <div class="actions">
+          <div class="actions" v-if="store.currentUser !== 'QA'">
             <el-dropdown @command="handleNewDocument">
               <el-button type="primary">
                 New Document<el-icon class="el-icon--right"><arrow-down /></el-icon>
@@ -40,56 +40,62 @@
           </el-table-column>
           <el-table-column label="Actions" width="220" align="center">
             <template #default="scope">
-              <el-button v-if="scope.row.status === 'Active'" size="small" type="primary" @click="$router.push(`/documents/${scope.row.id}`)">Edit</el-button>
+              <el-button v-if="scope.row.status === 'Active'" size="small" type="primary" @click="$router.push(`/documents/${scope.row.id}`)">
+                {{ store.currentUser === 'QA' ? 'View/Approve' : 'Edit' }}
+              </el-button>
               <el-button v-else-if="scope.row.status === 'Locked'" size="small" @click="$router.push(`/documents/${scope.row.id}`)">View</el-button>
 
-              <el-button v-if="scope.row.status === 'Active'" size="small" type="warning" @click="updateDocumentStatus(scope.row, 'Locked')">Lock</el-button>
-              <el-button v-if="scope.row.status === 'Locked'" size="small" type="success" @click="updateDocumentStatus(scope.row, 'Active')">Unlock</el-button>
-              <el-button size="small" type="danger" @click="updateDocumentStatus(scope.row, 'Archived')">Archive</el-button>
+              <template v-if="store.currentUser === 'Admin'">
+                <el-button v-if="scope.row.status === 'Active'" size="small" type="warning" @click="updateDocumentStatus(scope.row, 'Locked')">Lock</el-button>
+                <el-button v-if="scope.row.status === 'Locked'" size="small" type="success" @click="updateDocumentStatus(scope.row, 'Active')">Unlock</el-button>
+                <el-button size="small" type="danger" @click="updateDocumentStatus(scope.row, 'Archived')">Archive</el-button>
+              </template>
             </template>
           </el-table-column>
         </el-table>
 
-        <div class="action-bar" style="margin-top: 50px;">
-          <h2>Templates</h2>
-          <div class="actions">
-            <el-button type="primary" @click="handleNewTemplate">Create Template</el-button>
+        <div v-if="store.currentUser === 'Admin'">
+          <div class="action-bar" style="margin-top: 50px;">
+            <h2>Templates</h2>
+            <div class="actions">
+              <el-button type="primary" @click="handleNewTemplate">Create Template</el-button>
+            </div>
           </div>
-        </div>
-        <el-table :data="visibleTemplates" style="width: 100%" stripe border>
-          <el-table-column prop="id" label="#" width="80" />
-          <el-table-column prop="name" label="Name" />
-          <el-table-column label="Status" width="150">
-            <template #default="scope">
-              <el-popover placement="top" :width="250" trigger="click">
-                <template #reference>
-                  <el-tag :type="getTemplateStatusType(scope.row.status)" style="cursor: pointer">
-                    {{ scope.row.status }}
-                  </el-tag>
-                </template>
-                <div class="status-popover-content">
-                  <p><strong>Instructions:</strong></p>
-                  <p v-if="scope.row.status !== 'Active'">• Active: Usable for new documents.</p>
-                  <p v-if="scope.row.status !== 'Inactive'">• Inactive: Hidden from new document creation.</p>
-                  <p>• Archived: Moved to the Archive tab.</p>
-                  <div style="margin-top: 10px; display: flex; gap: 5px;">
-                    <el-button v-if="scope.row.status !== 'Active'" size="small" type="success" @click="updateTemplateStatus(scope.row, 'Active')">Active</el-button>
-                    <el-button v-if="scope.row.status !== 'Inactive'" size="small" type="info" @click="updateTemplateStatus(scope.row, 'Inactive')">Inactive</el-button>
-                    <el-button size="small" type="danger" @click="updateTemplateStatus(scope.row, 'Archived')">Archive</el-button>
+          <el-table :data="visibleTemplates" style="width: 100%" stripe border>
+            <el-table-column prop="id" label="#" width="80" />
+            <el-table-column prop="name" label="Name" />
+            <el-table-column label="Status" width="150">
+              <template #default="scope">
+                <el-popover placement="top" :width="250" trigger="click">
+                  <template #reference>
+                    <el-tag :type="getTemplateStatusType(scope.row.status)" style="cursor: pointer">
+                      {{ scope.row.status }}
+                    </el-tag>
+                  </template>
+                  <div class="status-popover-content">
+                    <p><strong>Instructions:</strong></p>
+                    <p v-if="scope.row.status !== 'Active'">• Active: Usable for new documents.</p>
+                    <p v-if="scope.row.status !== 'Inactive'">• Inactive: Hidden from new document creation.</p>
+                    <p>• Archived: Moved to the Archive tab.</p>
+                    <div style="margin-top: 10px; display: flex; gap: 5px;">
+                      <el-button v-if="scope.row.status !== 'Active'" size="small" type="success" @click="updateTemplateStatus(scope.row, 'Active')">Active</el-button>
+                      <el-button v-if="scope.row.status !== 'Inactive'" size="small" type="info" @click="updateTemplateStatus(scope.row, 'Inactive')">Inactive</el-button>
+                      <el-button size="small" type="danger" @click="updateTemplateStatus(scope.row, 'Archived')">Archive</el-button>
+                    </div>
                   </div>
-                </div>
-              </el-popover>
-            </template>
-          </el-table-column>
-          <el-table-column label="Actions" width="150" align="center">
-            <template #default="scope">
-              <el-button size="small" @click="$router.push(`/templates/${scope.row.id}/edit`)">Edit</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+                </el-popover>
+              </template>
+            </el-table-column>
+            <el-table-column label="Actions" width="150" align="center">
+              <template #default="scope">
+                <el-button size="small" @click="$router.push(`/templates/${scope.row.id}/edit`)">Edit</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-tab-pane>
 
-      <el-tab-pane label="Archive" name="archive">
+      <el-tab-pane label="Archive" name="archive" v-if="store.currentUser === 'Admin'">
         <div class="action-bar">
           <h2>Archived Documents</h2>
         </div>

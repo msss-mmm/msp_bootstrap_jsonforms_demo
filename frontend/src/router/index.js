@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import TemplateEditor from '../views/TemplateEditor.vue'
 import DocumentDetail from '../views/DocumentDetail.vue'
+import AdminView from '../views/AdminView.vue'
+import { useAppStore } from '../stores/app'
 
 const getBasePath = () => {
   let base = window._APP_BASE_ || '/'
@@ -40,8 +42,22 @@ const router = createRouter({
       path: '/documents/:id',
       name: 'document-detail',
       component: DocumentDetail
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminView
     }
   ]
+})
+
+router.beforeEach((to, from, next) => {
+  const store = useAppStore()
+  if (to.name === 'admin' && store.currentUser !== 'Admin') {
+    next({ name: 'home' })
+  } else {
+    next()
+  }
 })
 
 export default router

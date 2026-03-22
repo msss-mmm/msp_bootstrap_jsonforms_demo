@@ -2,7 +2,7 @@
   <div class="approval-component">
     <el-button v-if="!modelValue.name"
                type="warning"
-               :disabled="disabled || store.currentUser !== 'QA'"
+               :disabled="disabled || (store.currentUser !== 'QA' && store.currentUser !== 'Admin')"
                @click="approve">
       Approve as QA
     </el-button>
