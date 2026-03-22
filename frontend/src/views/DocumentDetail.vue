@@ -4,11 +4,19 @@
       <template #content>
         <span class="text-large font-600 mr-3"> {{ doc?.title || 'Loading...' }} </span>
         <el-tag v-if="doc" type="info">{{ doc.template_name }}</el-tag>
-        <el-tag v-if="doc" :type="getStatusType(doc.status)" style="margin-left: 10px;">{{ doc.status }}</el-tag>
       </template>
       <template #extra>
-        <el-button v-if="doc && doc.status === 'Active'" type="primary" @click="saveDocument">Save Document</el-button>
-        <el-button v-if="doc && doc.status === 'Active'" type="warning" @click="lockDocument">Lock Document</el-button>
+        <div v-if="doc">
+          <template v-if="doc.status === 'Active'">
+            <el-button type="primary" @click="saveDocument">Save Document</el-button>
+            <el-button type="warning" @click="lockDocument">Lock Document</el-button>
+          </template>
+          <template v-else>
+            <el-tag :type="getStatusType(doc.status)" size="large" effect="dark">
+              {{ doc.status }}
+            </el-tag>
+          </template>
+        </div>
       </template>
     </el-page-header>
 
@@ -49,6 +57,9 @@ const computedOptions = computed(() => {
     options.submitBtn = false
     options.resetBtn = false
     options.disabled = true
+    options.form = {
+      disabled: true
+    }
   }
   return options
 })
@@ -56,6 +67,14 @@ const computedOptions = computed(() => {
 const fetchDoc = async () => {
   try {
     const res = await axios.get(`${store.apiUrl}/documents/${route.params.id}/`)
+
+    // Redirect if archived as it should not be viewable
+    if (res.data.status === 'Archived') {
+      ElMessage.warning('Archived documents cannot be viewed')
+      router.push('/')
+      return
+    }
+
     const templateRes = await axios.get(`${store.apiUrl}/templates/${res.data.template}/`)
 
     doc.value = {
@@ -96,6 +115,7 @@ const saveDocument = async () => {
 }
 
 const lockDocument = async () => {
+  if (isLocked.value) return
   try {
     const currentData = fApi.value.formData()
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {

@@ -41,9 +41,10 @@
           <el-table-column label="Actions" width="220" align="center">
             <template #default="scope">
               <el-button v-if="scope.row.status === 'Active'" size="small" type="primary" @click="$router.push(`/documents/${scope.row.id}`)">Edit</el-button>
-              <el-button v-else size="small" @click="$router.push(`/documents/${scope.row.id}`)">View</el-button>
+              <el-button v-else-if="scope.row.status === 'Locked'" size="small" @click="$router.push(`/documents/${scope.row.id}`)">View</el-button>
 
               <el-button v-if="scope.row.status === 'Active'" size="small" type="warning" @click="updateDocumentStatus(scope.row, 'Locked')">Lock</el-button>
+              <el-button v-if="scope.row.status === 'Locked'" size="small" type="success" @click="updateDocumentStatus(scope.row, 'Active')">Unlock</el-button>
               <el-button size="small" type="danger" @click="updateDocumentStatus(scope.row, 'Archived')">Archive</el-button>
             </template>
           </el-table-column>
@@ -103,7 +104,6 @@
           </el-table-column>
           <el-table-column label="Actions" width="200" align="center">
             <template #default="scope">
-              <el-button size="small" @click="$router.push(`/documents/${scope.row.id}`)">View</el-button>
               <el-button size="small" type="success" @click="updateDocumentStatus(scope.row, 'Active')">Restore</el-button>
             </template>
           </el-table-column>
@@ -117,7 +117,6 @@
           <el-table-column prop="name" label="Name" />
           <el-table-column label="Actions" width="200" align="center">
             <template #default="scope">
-              <el-button size="small" @click="$router.push(`/templates/${scope.row.id}/edit`)">Edit</el-button>
               <el-button size="small" type="success" @click="updateTemplateStatus(scope.row, 'Active')">Restore</el-button>
             </template>
           </el-table-column>
