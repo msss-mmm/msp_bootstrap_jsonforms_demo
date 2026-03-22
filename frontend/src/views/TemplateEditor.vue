@@ -91,6 +91,14 @@ const fetchTemplate = async () => {
   if (isEdit.value) {
     try {
       const res = await axios.get(`${store.apiUrl}/templates/${route.params.id}/`)
+
+      // Redirect if archived as it should not be editable
+      if (res.data.status === 'Archived') {
+        ElMessage.warning('Archived templates cannot be edited')
+        router.push('/')
+        return
+      }
+
       templateName.value = res.data.name
       templateStatus.value = res.data.status || 'Active'
       // designer.value.setRule(res.data.rule)
