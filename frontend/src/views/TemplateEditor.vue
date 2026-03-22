@@ -33,6 +33,12 @@ const templateName = ref('')
 const isEdit = computed(() => !!route.params.id)
 
 const designerConfig = {
+  // Disable AI feature that makes requests to https://api.form-create.com
+  showAi: false,
+  ai: {
+    api: '',
+    token: ''
+  },
   // Add custom components to the designer menu
   menu: [
     {
