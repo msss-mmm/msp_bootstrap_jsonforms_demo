@@ -25,6 +25,6 @@ app.use(ElementPlus, {
 app.use(formCreate)
 app.use(FcDesigner)
 
-FcDesigner.locale(locale);
+FcDesigner.useLocale(locale);
 
 app.mount('#app')
