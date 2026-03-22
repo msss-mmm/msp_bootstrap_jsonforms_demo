@@ -27,7 +27,10 @@ class Command(BaseCommand):
 
                     rule = data.get('rule', [])
                     options_data = data.get('options', {})
-                    is_active = data.get('is_active', True)
+                    status = data.get('status')
+                    if not status:
+                        is_active = data.get('is_active', True)
+                        status = 'Active' if is_active else 'Inactive'
                     description = data.get('description', '')
 
                     # Simple check if it's already a FormCreate rule
@@ -38,7 +41,7 @@ class Command(BaseCommand):
                         defaults={
                             'rule': rule,
                             'options': options_data,
-                            'is_active': is_active,
+                            'status': status,
                             'description': description
                         }
                     )

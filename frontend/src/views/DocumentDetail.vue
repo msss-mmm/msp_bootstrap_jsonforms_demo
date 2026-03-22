@@ -4,9 +4,11 @@
       <template #content>
         <span class="text-large font-600 mr-3"> {{ doc?.title || 'Loading...' }} </span>
         <el-tag v-if="doc" type="info">{{ doc.template_name }}</el-tag>
+        <el-tag v-if="doc" :type="getStatusType(doc.status)" style="margin-left: 10px;">{{ doc.status }}</el-tag>
       </template>
       <template #extra>
-        <el-button type="primary" @click="saveDocument">Save Document</el-button>
+        <el-button v-if="doc && doc.status === 'Active'" type="primary" @click="saveDocument">Save Document</el-button>
+        <el-button v-if="doc && doc.status === 'Active'" type="warning" @click="lockDocument">Lock Document</el-button>
       </template>
     </el-page-header>
 
@@ -14,7 +16,7 @@
       <form-create
         v-model:api="fApi"
         :rule="doc.template_rule"
-        :option="doc.template_options"
+        :option="computedOptions"
         v-model="formData"
       />
     </div>
@@ -25,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
@@ -37,6 +39,19 @@ const store = useAppStore()
 const fApi = ref({})
 const doc = ref(null)
 const formData = ref({})
+
+const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
+
+const computedOptions = computed(() => {
+  if (!doc.value) return {}
+  const options = { ...doc.value.template_options }
+  if (isLocked.value) {
+    options.submitBtn = false
+    options.resetBtn = false
+    options.disabled = true
+  }
+  return options
+})
 
 const fetchDoc = async () => {
   try {
@@ -55,7 +70,17 @@ const fetchDoc = async () => {
   }
 }
 
+const getStatusType = (status) => {
+  switch (status) {
+    case 'Active': return 'success'
+    case 'Locked': return 'warning'
+    case 'Archived': return 'danger'
+    default: return ''
+  }
+}
+
 const saveDocument = async () => {
+  if (isLocked.value) return
   try {
     // Ensure all data is captured from FormCreate
     const currentData = fApi.value.formData()
@@ -67,6 +92,21 @@ const saveDocument = async () => {
   } catch (error) {
     console.error(error)
     ElMessage.error('Failed to save document')
+  }
+}
+
+const lockDocument = async () => {
+  try {
+    const currentData = fApi.value.formData()
+    await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
+      data: currentData,
+      status: 'Locked'
+    })
+    ElMessage.success('Document locked')
+    fetchDoc()
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('Failed to lock document')
   }
 }
 
