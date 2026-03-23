@@ -6,16 +6,17 @@
         <el-tag v-if="doc" type="info">{{ doc.template_name }}</el-tag>
       </template>
       <template #extra>
-        <div v-if="doc">
+        <div v-if="doc" style="display: flex; gap: 10px; align-items: center;">
           <template v-if="doc.status === 'Active'">
-            <el-button type="primary" @click="saveDocument">Save Document</el-button>
-            <el-button type="warning" @click="lockDocument">Lock Document</el-button>
+            <el-button v-if="store.currentUser !== 'QA'" type="primary" @click="saveDocument">Save Document</el-button>
+            <el-button v-if="store.currentUser === 'Admin'" type="warning" @click="lockDocument">Lock Document</el-button>
           </template>
           <template v-else>
             <el-tag :type="getStatusType(doc.status)" size="large" effect="dark">
               {{ doc.status }}
             </el-tag>
           </template>
+          <el-button @click="$router.push('/')">Done</el-button>
         </div>
       </template>
     </el-page-header>
@@ -23,9 +24,10 @@
     <div v-if="doc" class="form-container">
       <form-create
         v-model:api="fApi"
-        :rule="doc.template_rule"
+        :rule="computedRule"
         :option="computedOptions"
         v-model="formData"
+        @change="onFormChange"
       />
     </div>
     <div v-else class="loading-state">
@@ -53,15 +55,50 @@ const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
 const computedOptions = computed(() => {
   if (!doc.value) return {}
   const options = { ...doc.value.template_options }
+
+  options.submitBtn = false
+  options.resetBtn = false
+
   if (isLocked.value) {
-    options.submitBtn = false
-    options.resetBtn = false
     options.disabled = true
     options.form = {
       disabled: true
     }
   }
   return options
+})
+
+const computedRule = computed(() => {
+  if (!doc.value) return []
+  const rule = JSON.parse(JSON.stringify(doc.value.template_rule))
+
+  const processRule = (rules) => {
+    rules.forEach(r => {
+      // If QA, everything except QA approval is disabled
+      if (store.currentUser === 'QA' && !isLocked.value) {
+        if (r.type !== 'QAApprove') {
+          r.props = r.props || {}
+          r.props.disabled = true
+        }
+      }
+      // If Operator, QA approval is disabled
+      if (store.currentUser === 'Operator' && !isLocked.value) {
+        if (r.type === 'QAApprove') {
+          r.props = r.props || {}
+          r.props.disabled = true
+        }
+      }
+      if (r.children) processRule(r.children)
+      if (r.control) {
+        r.control.forEach(c => {
+          if (c.rule) processRule(c.rule)
+        })
+      }
+    })
+  }
+
+  processRule(rule)
+  return rule
 })
 
 const fetchDoc = async () => {
@@ -98,7 +135,7 @@ const getStatusType = (status) => {
   }
 }
 
-const saveDocument = async () => {
+const saveDocument = async (showMsg = true) => {
   if (isLocked.value) return
   try {
     // Ensure all data is captured from FormCreate
@@ -107,7 +144,7 @@ const saveDocument = async () => {
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
       data: currentData
     })
-    ElMessage.success('Document saved')
+    if (showMsg) ElMessage.success('Document saved')
   } catch (error) {
     console.error(error)
     ElMessage.error('Failed to save document')
@@ -128,6 +165,11 @@ const lockDocument = async () => {
     console.error(error)
     ElMessage.error('Failed to lock document')
   }
+}
+
+const onFormChange = () => {
+  // Auto-save changes for time-stamped activities like approvals
+  saveDocument(false)
 }
 
 onMounted(fetchDoc)

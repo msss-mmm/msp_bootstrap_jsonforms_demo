@@ -5,7 +5,7 @@
         <router-link to="/" class="logo">Mfg Execution System</router-link>
         <el-menu mode="horizontal" :ellipsis="false" router class="header-menu" :default-active="$route.path">
           <el-menu-item index="/">Home</el-menu-item>
-          <el-menu-item index="/templates/new">Create Template</el-menu-item>
+          <el-menu-item v-if="store.currentUser === 'Admin'" index="/admin">Admin</el-menu-item>
         </el-menu>
       </div>
       <div class="header-right">

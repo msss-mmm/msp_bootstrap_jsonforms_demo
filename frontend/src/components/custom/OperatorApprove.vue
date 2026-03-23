@@ -2,7 +2,7 @@
   <div class="approval-component">
     <el-button v-if="!modelValue.name"
                type="primary"
-               :disabled="disabled || store.currentUser !== 'Operator'"
+               :disabled="disabled || (store.currentUser !== 'Operator' && store.currentUser !== 'Admin')"
                @click="approve">
       Approve as Operator
     </el-button>
