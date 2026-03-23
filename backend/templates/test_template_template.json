@@ -1,23 +1,9 @@
 {
   "name": "Test Template",
   "description": "",
-  "rule": [],
-  "options": {
-    "form": {
-      "inline": false,
-      "hideRequiredAsterisk": false,
-      "labelPosition": "right",
-      "size": "default",
-      "labelWidth": "125px"
-    },
-    "resetBtn": {
-      "show": false,
-      "innerText": "\u91cd\u7f6e"
-    },
-    "submitBtn": {
-      "show": true,
-      "innerText": "\u63d0\u4ea4"
-    }
+  "rule": {
+    "rule": "test"
   },
-  "status": "Inactive"
+  "options": {},
+  "status": "Archived"
 }
