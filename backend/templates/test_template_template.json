@@ -1,9 +1,20 @@
 {
   "name": "Test Template",
   "description": "",
-  "rule": {
-    "rule": "test"
-  },
+  "rule": [
+    {
+      "type": "OperatorApprove",
+      "field": "op_1"
+    },
+    {
+      "type": "QAApprove",
+      "field": "qa_1"
+    },
+    {
+      "type": "input",
+      "field": "input_1"
+    }
+  ],
   "options": {},
-  "status": "Archived"
+  "status": "Active"
 }
