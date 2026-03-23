@@ -1,7 +1,56 @@
 {
   "name": "Computer Assembly Traveler",
-  "description": "",
-  "rule": [],
-  "options": {},
+  "description": "Manufacturing traveler for computer assembly",
+  "rule": [
+    {
+      "type": "input",
+      "field": "work_order",
+      "title": "Work Order",
+      "value": "WO-2024-001"
+    },
+    {
+      "type": "input",
+      "field": "part_number",
+      "title": "Part Number",
+      "value": "CB-X1-PRO"
+    },
+    {
+      "type": "inputNumber",
+      "field": "quantity",
+      "title": "Quantity",
+      "value": 5
+    },
+    {
+      "type": "OperatorApprove",
+      "field": "op_app_10",
+      "title": "Step 10: Circuit Board Install"
+    },
+    {
+      "type": "QAApprove",
+      "field": "qa_app_10",
+      "title": "QA Step 10"
+    },
+    {
+      "type": "input",
+      "field": "notes_10",
+      "title": "Notes Step 10",
+      "value": "All screws tightened."
+    },
+    {
+      "type": "OperatorApprove",
+      "field": "op_app_20",
+      "title": "Step 20: Power Supply Install"
+    },
+    {
+      "type": "QAApprove",
+      "field": "qa_app_20",
+      "title": "QA Step 20"
+    }
+  ],
+  "options": {
+    "form": {
+      "labelPosition": "top"
+    }
+  },
   "status": "Active"
 }
