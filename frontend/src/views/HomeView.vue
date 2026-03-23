@@ -26,6 +26,18 @@
           <el-table-column prop="id" label="#" width="80" />
           <el-table-column prop="title" label="Title" />
           <el-table-column prop="template_name" label="Template" />
+          <el-table-column label="Operator" width="100" align="center">
+            <template #default="scope">
+              <el-icon v-if="scope.row.operator_status === 'full'" color="#67C23A" size="20"><SuccessFilled /></el-icon>
+              <el-icon v-else-if="scope.row.operator_status === 'partial'" color="#909399" size="20"><CircleCheck /></el-icon>
+            </template>
+          </el-table-column>
+          <el-table-column label="QA" width="100" align="center">
+            <template #default="scope">
+              <el-icon v-if="scope.row.qa_status === 'full'" color="#67C23A" size="20"><SuccessFilled /></el-icon>
+              <el-icon v-else-if="scope.row.qa_status === 'partial'" color="#909399" size="20"><CircleCheck /></el-icon>
+            </template>
+          </el-table-column>
           <el-table-column label="Status" width="120">
             <template #default="scope">
               <el-tag :type="getDocumentStatusType(scope.row.status)">
@@ -103,6 +115,18 @@
           <el-table-column prop="id" label="#" width="80" />
           <el-table-column prop="title" label="Title" />
           <el-table-column prop="template_name" label="Template" />
+          <el-table-column label="Operator" width="100" align="center">
+            <template #default="scope">
+              <el-icon v-if="scope.row.operator_status === 'full'" color="#67C23A" size="20"><SuccessFilled /></el-icon>
+              <el-icon v-else-if="scope.row.operator_status === 'partial'" color="#909399" size="20"><CircleCheck /></el-icon>
+            </template>
+          </el-table-column>
+          <el-table-column label="QA" width="100" align="center">
+            <template #default="scope">
+              <el-icon v-if="scope.row.qa_status === 'full'" color="#67C23A" size="20"><SuccessFilled /></el-icon>
+              <el-icon v-else-if="scope.row.qa_status === 'partial'" color="#909399" size="20"><CircleCheck /></el-icon>
+            </template>
+          </el-table-column>
           <el-table-column label="Created" width="180">
             <template #default="scope">
               {{ new Date(scope.row.created_at).toLocaleString() }}
@@ -167,7 +191,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { ArrowDown, SuccessFilled, CircleCheck } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const store = useAppStore()
