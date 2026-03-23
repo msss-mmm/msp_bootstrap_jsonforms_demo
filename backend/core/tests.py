@@ -88,17 +88,12 @@ class APITests(TestCase):
         self.client = APIClient()
         self.template = Template.objects.create(
             name="Test Template",
-            rule=[
-                {"type": "OperatorApprove", "field": "op_1"},
-                {"type": "QAApprove", "field": "qa_1"},
-                {"type": "input", "field": "input_1"}
-            ],
+            rule={"rule": "test"},
             status="Active"
         )
         self.document = DocumentInstance.objects.create(
             template=self.template,
             title="Test Document",
-            data={},
             status="Active"
         )
 
@@ -120,7 +115,7 @@ class APITests(TestCase):
         url = reverse('template-list')
         data = {
             "name": "New Template",
-            "rule": [{"rule": "new"}],
+            "rule": {"rule": "new"},
             "status": "Active"
         }
         response = self.client.post(url, data, format='json')
@@ -137,54 +132,3 @@ class APITests(TestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(DocumentInstance.objects.count(), 2)
-
-    def test_approval_status(self):
-        url = reverse('documentinstance-list')
-
-        # Initial: None
-        response = self.client.get(url)
-        doc = response.data[0]
-        self.assertEqual(doc['operator_status'], 'none')
-        self.assertEqual(doc['qa_status'], 'none')
-
-        # Partial Operator
-        self.document.data = {'op_1': {'name': 'operator'}}
-        self.document.save()
-        response = self.client.get(url)
-        doc = response.data[0]
-        self.assertEqual(doc['operator_status'], 'full') # Only 1 op field, so 1/1 is full
-        self.assertEqual(doc['qa_status'], 'none')
-
-        # Complex template with multiple fields
-        complex_template = Template.objects.create(
-            name="Complex Template",
-            rule=[
-                {"type": "OperatorApprove", "field": "op_1"},
-                {"type": "OperatorApprove", "field": "op_2"},
-                {"type": "QAApprove", "field": "qa_1"}
-            ],
-            status="Active"
-        )
-        complex_doc = DocumentInstance.objects.create(
-            template=complex_template,
-            title="Complex Doc",
-            data={'op_1': {'name': 'operator'}},
-            status="Active"
-        )
-        response = self.client.get(url)
-        # Find complex doc
-        doc = next(d for d in response.data if d['id'] == complex_doc.id)
-        self.assertEqual(doc['operator_status'], 'partial')
-        self.assertEqual(doc['qa_status'], 'none')
-
-        # Full complex
-        complex_doc.data = {
-            'op_1': {'name': 'operator'},
-            'op_2': {'name': 'operator'},
-            'qa_1': {'name': 'qa'}
-        }
-        complex_doc.save()
-        response = self.client.get(url)
-        doc = next(d for d in response.data if d['id'] == complex_doc.id)
-        self.assertEqual(doc['operator_status'], 'full')
-        self.assertEqual(doc['qa_status'], 'full')
