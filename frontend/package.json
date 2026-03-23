@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "postinstall": "node fix-designer-chinese.cjs"
+    "postinstall": "node ./fix-designer-chinese.cjs"
   },
   "dependencies": {
     "@form-create/designer": "^3.4.0",
