@@ -60,6 +60,8 @@ onBeforeRouteLeave((to, from, next) => {
 })
 
 const designerConfig = {
+  // Allow the field ID to be editable
+  fieldReadonly: false,
   // Disable AI feature that makes requests to https://api.form-create.com
   showAi: false,
   ai: {
