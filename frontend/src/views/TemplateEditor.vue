@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
@@ -84,25 +84,6 @@ const designerConfig = {
       }
     }
   },
-  // Add custom components to the designer menu
-  menu: [
-    {
-      title: 'Workflow',
-      name: 'workflow',
-      list: [
-        {
-          icon: 'icon-button',
-          name: 'OperatorApprove',
-          label: 'Operator Approve'
-        },
-        {
-          icon: 'icon-button',
-          name: 'QAApprove',
-          label: 'QA Approve'
-        }
-      ]
-    }
-  ]
 }
 
 const getStatusType = (status) => {
@@ -202,7 +183,90 @@ const saveTemplate = async () => {
   }
 }
 
-onMounted(fetchTemplate)
+const isWorkflowRegistered = ref(false)
+const registerCustomComponents = () => {
+  if (!designer.value) return false
+  if (isWorkflowRegistered.value) return true
+
+  console.log('Adding Workflow menu...')
+  // Add the Workflow menu
+  designer.value.addMenu({
+    title: 'Workflow',
+    name: 'workflow',
+    list: [
+      {
+        icon: 'ele-Medal',
+        name: 'OperatorApprove',
+        label: 'Operator Approve'
+      },
+      {
+        icon: 'ele-Medal',
+        name: 'QAApprove',
+        label: 'QA Approve'
+      }
+    ]
+  })
+
+  // Add drag rules for the components
+  designer.value.addDragRule({
+    name: 'OperatorApprove',
+    rule() {
+      return {
+        type: 'OperatorApprove',
+        field: 'operator_approve_' + Math.random().toString(36).substr(2, 9),
+        title: 'Operator Approved',
+        value: { name: null, timestamp: null }
+      }
+    },
+    props() {
+      return [
+        { type: 'input', field: 'title', title: 'Title' }
+      ]
+    }
+  })
+
+  designer.value.addDragRule({
+    name: 'QAApprove',
+    rule() {
+      return {
+        type: 'QAApprove',
+        field: 'qa_approve_' + Math.random().toString(36).substr(2, 9),
+        title: 'QA Approved',
+        value: { name: null, timestamp: null }
+      }
+    },
+    props() {
+      return [
+        { type: 'input', field: 'title', title: 'Title' }
+      ]
+    }
+  })
+
+  isWorkflowRegistered.value = true
+  return true
+}
+
+let registrationInterval = null
+
+onMounted(() => {
+  fetchTemplate()
+
+  // Use a retry interval to ensure the designer instance is ready
+  registrationInterval = setInterval(() => {
+    if (designer.value && designer.value.addMenu) {
+      if (registerCustomComponents()) {
+        clearInterval(registrationInterval)
+        registrationInterval = null
+      }
+    }
+  }, 500)
+})
+
+onUnmounted(() => {
+  if (registrationInterval) {
+    clearInterval(registrationInterval)
+  }
+})
 </script>
 
 <style scoped>
