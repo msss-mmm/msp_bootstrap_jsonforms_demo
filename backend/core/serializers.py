@@ -27,14 +27,18 @@ class DocumentInstanceSerializer(serializers.ModelSerializer):
         field_names = []
 
         def find_fields(rules):
+            if not isinstance(rules, list):
+                return
             for r in rules:
+                if not isinstance(r, dict):
+                    continue
                 if r.get('type') == component_type:
                     field_names.append(r.get('field'))
                 if 'children' in r:
                     find_fields(r['children'])
                 if 'control' in r:
                     for c in r['control']:
-                        if 'rule' in c:
+                        if isinstance(c, dict) and 'rule' in c:
                             find_fields(c['rule'])
 
         find_fields(template_rule)
