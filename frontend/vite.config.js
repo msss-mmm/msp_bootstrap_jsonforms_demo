@@ -5,10 +5,22 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all envs regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, '../', '')
 
   return {
-    plugins: [vue()],
+    envDir: '../',
+    plugins: [
+      vue(),
+      {
+        name: 'html-transform',
+        transformIndexHtml(html) {
+          return html.replace(
+            /%VITE_APP_TITLE%/g,
+            env.VITE_APP_TITLE || 'App'
+          )
+        }
+      }
+    ],
     // Support for subpath via --base during build or VITE_BASE_URL env
     // Setting to './' for relative paths for portability
     base: './',
