@@ -6,7 +6,9 @@ COPY fix-designer-chinese.cjs ./
 RUN npm install
 COPY . .
 
-# Build with relative base path for portability
+# Build with relative base path for portability and pass title from ARG
+ARG VITE_APP_TITLE
+ENV VITE_APP_TITLE=$VITE_APP_TITLE
 RUN npm run build -- --base=./
 
 # Production stage

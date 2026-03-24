@@ -5,7 +5,11 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all envs regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, '../', '')
+  // First, we check the actual process.env for VITE_APP_TITLE to handle Docker build args
+  const env = {
+    ...process.env,
+    ...loadEnv(mode, '../', '')
+  }
 
   return {
     envDir: '../',
