@@ -9,10 +9,7 @@ services:
       - .env
     volumes:
       - ./backend:/app
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py seed_data &&
-             python manage.py runserver 0.0.0.0:8000"
+    command: "python manage.py runserver 0.0.0.0:${BACKEND_PORT}"
 
   frontend:
     build:

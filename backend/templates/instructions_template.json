@@ -1,9 +1,0 @@
-{
-  "name": "Computer Assembly Instructions",
-  "steps": [
-    { "step_number": 1, "instruction_text": "Install the circuit board into the case and secure with {{entry}} screws." },
-    { "step_number": 2, "instruction_text": "Connect the power supply to the circuit board. Verify the voltage reading is {{entry}} Volts." },
-    { "step_number": 3, "instruction_text": "Install chips and RAM. Ensure the CPU temperature is below {{entry}} Celsius after a 5-minute stress test." },
-    { "step_number": 4, "instruction_text": "Close the case and label the unit with the serial number {{entry}}." }
-  ]
-}

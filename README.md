@@ -1,6 +1,6 @@
-# MES Document Pipeline
+# DMS Document Pipeline
 
-A modern, dynamic Manufacturing Execution System (MES) designed to transition legacy "paper and binder" workflows into a secure, digital environment. This system uses a schema-driven approach for document templates and instances, powered by **FormCreate** and **Element Plus**.
+A modern, dynamic Document Management System (DMS) to transition legacy "paper and binder" workflows into a secure, digital environment. This system uses a schema-driven approach for document templates and instances, powered by **FormCreate** and **Element Plus**.
 
 ## Overview
 

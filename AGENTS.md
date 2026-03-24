@@ -1,7 +1,7 @@
 # System Specification: Manufacturing Execution & Document Pipeline
 
 ## Overview
-This document specifies the requirements for a Manufacturing Execution System (MES) designed to transition from paper-based workflows to a secure, multi-user digital platform. The system utilizes a dynamic, schema-driven approach to manage document templates and their resulting instances.
+This document specifies the requirements for a Document Management System (DMS) designed to transition from paper-based workflows to a secure, multi-user digital platform. The system utilizes a dynamic, schema-driven approach to manage document templates and their resulting instances.
 
 ## Recommended Technology Stack
 The system is designed to be technology-agnostic where possible, but the following stack is recommended for compatibility with the current implementation:
