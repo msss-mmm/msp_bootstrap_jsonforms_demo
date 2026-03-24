@@ -285,4 +285,15 @@ onUnmounted(() => {
 :deep(.fc-designer) {
   height: 100% !important;
 }
+
+:deep(.ele-Medal) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'><path fill='%23409eff' d='M512 64a448 448 0 1 1 0 896 448 448 0 0 1 0-896zm0 832a384 384 0 1 0 0-768 384 384 0 0 0 0 768zm48-528.64V256h-96v109.36A160 160 0 0 0 352 512c0 88.32 71.68 160 160 160s160-71.68 160-160a160 160 0 0 0-112-152.64zM512 608c-53.056 0-96-42.944-96-96s42.944-96 96-96 96 42.944 96 96-42.944 96-96 96z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
 </style>
