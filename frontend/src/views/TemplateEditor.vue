@@ -1,30 +1,31 @@
 <template>
   <div class="template-editor">
-    <el-page-header @back="$router.push('/')">
+    <el-page-header @back="handleBack">
       <template #content>
         <span class="text-large font-600 mr-3"> {{ isEdit ? 'Edit Template' : 'New Template' }} </span>
         <el-tag v-if="templateStatus" :type="getStatusType(templateStatus)" style="margin-left: 10px;">{{ templateStatus }}</el-tag>
       </template>
       <template #extra>
         <div class="flex items-center">
-          <el-input v-model="templateName" placeholder="Template Name" style="width: 250px; margin-right: 15px;" />
+          <el-input v-model="templateName" placeholder="Template Name" style="width: 250px; margin-right: 15px;" @input="hasChanges = true" />
+          <el-button @click="discardChanges">Discard Changes</el-button>
           <el-button type="primary" @click="saveTemplate">Save Template</el-button>
         </div>
       </template>
     </el-page-header>
 
     <div class="designer-container">
-      <fc-designer ref="designer" :config="designerConfig" />
+      <fc-designer ref="designer" :config="designerConfig" @change="onDesignerChange" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,6 +34,30 @@ const designer = ref(null)
 const templateName = ref('')
 const templateStatus = ref('Active')
 const isEdit = computed(() => !!route.params.id)
+const hasChanges = ref(false)
+const isInitializing = ref(false)
+
+onBeforeRouteLeave((to, from, next) => {
+  if (hasChanges.value) {
+    ElMessageBox.confirm(
+      'You have unsaved changes. Are you sure you want to leave?',
+      'Warning',
+      {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    )
+      .then(() => {
+        next()
+      })
+      .catch(() => {
+        next(false)
+      })
+  } else {
+    next()
+  }
+})
 
 const designerConfig = {
   // Disable AI feature that makes requests to https://api.form-create.com
@@ -90,6 +115,7 @@ const getStatusType = (status) => {
 const fetchTemplate = async () => {
   if (isEdit.value) {
     try {
+      isInitializing.value = true
       const res = await axios.get(`${store.apiUrl}/templates/${route.params.id}/`)
 
       // Redirect if archived as it should not be editable
@@ -101,21 +127,42 @@ const fetchTemplate = async () => {
 
       templateName.value = res.data.name
       templateStatus.value = res.data.status || 'Active'
-      // designer.value.setRule(res.data.rule)
-      // designer.value.setOptions(res.data.options)
-      // wait for component to be ready
+
+      // Use nextTick or a short delay to ensure designer is mounted
       setTimeout(() => {
         if (designer.value) {
-           designer.value.setRule(res.data.rule)
-           designer.value.setOption(res.data.options)
+          designer.value.setRule(res.data.rule)
+          designer.value.setOption(res.data.options)
+          // Mark as done initializing after a slight delay to allow @change events from setRule to settle
+          setTimeout(() => {
+            isInitializing.value = false
+            hasChanges.value = false
+          }, 100)
         }
-      }, 500)
+      }, 200)
     } catch (error) {
       console.error(error)
       ElMessage.error('Failed to load template')
+      isInitializing.value = false
     }
   } else if (route.query.name) {
     templateName.value = route.query.name
+    hasChanges.value = true
+  }
+}
+
+const handleBack = () => {
+  router.push('/')
+}
+
+const discardChanges = () => {
+  hasChanges.value = false
+  router.push('/')
+}
+
+const onDesignerChange = () => {
+  if (!isInitializing.value) {
+    hasChanges.value = true
   }
 }
 
@@ -139,10 +186,13 @@ const saveTemplate = async () => {
     if (isEdit.value) {
       await axios.put(`${store.apiUrl}/templates/${route.params.id}/`, payload)
       ElMessage.success('Template updated')
+      hasChanges.value = false
     } else {
-      await axios.post(`${store.apiUrl}/templates/`, payload)
+      const res = await axios.post(`${store.apiUrl}/templates/`, payload)
       ElMessage.success('Template created')
-      router.push('/')
+      hasChanges.value = false
+      // Redirect to the edit page for the newly created template
+      router.push(`/templates/${res.data.id}`)
     }
   } catch (error) {
     console.error(error)

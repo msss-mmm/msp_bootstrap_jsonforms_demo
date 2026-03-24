@@ -8,7 +8,6 @@
       <template #extra>
         <div v-if="doc" style="display: flex; gap: 10px; align-items: center;">
           <template v-if="doc.status === 'Active'">
-            <el-button v-if="store.currentUser !== 'QA'" type="primary" @click="saveDocument">Save Document</el-button>
             <el-button v-if="store.currentUser === 'Admin'" type="warning" @click="lockDocument">Lock Document</el-button>
           </template>
           <template v-else>
