@@ -2,7 +2,7 @@
   <el-container class="app-container">
     <el-header class="header">
       <div class="header-left">
-        <router-link to="/" class="logo">Mfg Execution System</router-link>
+        <router-link to="/" class="logo">{{ appTitle }}</router-link>
         <el-menu mode="horizontal" :ellipsis="false" router class="header-menu" :default-active="$route.path">
           <el-menu-item index="/">Home</el-menu-item>
           <el-menu-item v-if="store.currentUser === 'Admin'" index="/admin">Admin</el-menu-item>
@@ -35,6 +35,8 @@
 import { useAppStore } from './stores/app'
 import { ArrowDown } from '@element-plus/icons-vue'
 const store = useAppStore()
+
+const appTitle = import.meta.env.VITE_APP_TITLE || 'App'
 
 const onUserChange = (user) => {
   store.setCurrentUser(user)
