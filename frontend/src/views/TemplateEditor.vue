@@ -194,7 +194,7 @@ const saveTemplate = async () => {
       ElMessage.success('Template created')
       hasChanges.value = false
       // Redirect to the edit page for the newly created template
-      router.push(`/templates/${res.data.id}`)
+      router.push(`/templates/${res.data.id}/edit`)
     }
   } catch (error) {
     console.error(error)
