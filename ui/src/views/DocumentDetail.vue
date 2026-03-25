@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
@@ -146,6 +146,7 @@ const fetchDoc = async () => {
     }
     formData.value = res.data.data
 
+    await nextTick()
     // Mark as done initializing after a slight delay
     setTimeout(() => {
       isInitializing.value = false
