@@ -1,12 +1,18 @@
 <template>
   <div class="approval-component">
-    <el-button v-if="!modelValue.name"
-               type="primary"
-               icon="Medal"
-               :disabled="disabled || (store.currentUser !== 'Operator' && store.currentUser !== 'Admin')"
-               @click="approve">
-      Approve as Operator
-    </el-button>
+    <div v-if="!modelValue.name" class="unapproved-container">
+      <el-button class="no-print"
+                 type="primary"
+                 icon="Medal"
+                 :disabled="disabled || (store.currentUser !== 'Operator' && store.currentUser !== 'Admin')"
+                 @click="approve">
+        Approve as Operator
+      </el-button>
+      <div class="print-only unapproved-text">
+        <el-icon><Warning /></el-icon>
+        <span>not approved by Operator</span>
+      </div>
+    </div>
     <el-alert v-else
               :title="'Approved by ' + modelValue.name"
               type="success"
@@ -57,5 +63,26 @@ const formatDate = (ts) => {
 <style scoped>
 .approval-component {
   margin: 10px 0;
+}
+
+.unapproved-text {
+  color: #f56c6c;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: bold;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block;
+  }
+  .no-print {
+    display: none !important;
+  }
 }
 </style>
