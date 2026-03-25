@@ -28,13 +28,6 @@
           <p>TBD: Database backup functionality will be implemented here.</p>
         </div>
       </el-tab-pane>
-
-      <el-tab-pane label="Template Restore from JSON" name="restore">
-        <div class="tab-content">
-          <h2>Template Restore from JSON</h2>
-          <p>TBD: Functionality to restore templates from JSON files will be implemented here.</p>
-        </div>
-      </el-tab-pane>
     </el-tabs>
   </div>
 </template>

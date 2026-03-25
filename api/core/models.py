@@ -22,18 +22,9 @@ class Template(models.Model):
         return self.name
 
     def get_template_filename(self):
-        """Returns the filename for this template, maintaining backward compatibility."""
-        # Old format: name.lower().replace(' ', '_') + '_template.json'
-        old_filename = f"{self.name.lower().replace(' ', '_')}_template.json"
-        templates_dir = os.path.join(settings.BASE_DIR, 'templates')
-        old_filepath = os.path.join(templates_dir, old_filename)
-
-        if os.path.exists(old_filepath):
-            return old_filename
-
-        # New format (safe): URL-encoded name
+        """Returns the filename for this template."""
         safe_name = urllib.parse.quote(self.name, safe='')
-        return f"{safe_name}_template.json"
+        return f"{self.id}_{safe_name}_template.json"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -44,11 +35,14 @@ class Template(models.Model):
         filename = self.get_template_filename()
         filepath = os.path.join(templates_dir, filename)
         data = {
+            "id": self.id,
             "name": self.name,
             "description": self.description,
             "rule": self.rule,
             "options": self.options,
-            "status": self.status
+            "status": self.status,
+            "CreatedAt": self.created_at.isoformat() if self.created_at else None,
+            "UpdatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2)
@@ -68,3 +62,28 @@ class DocumentInstance(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.template.name})"
+
+    def get_document_filename(self):
+        """Returns the filename for this document."""
+        safe_title = urllib.parse.quote(self.title, safe='')
+        return f"{self.id}_{safe_title}.json"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Sync to directory
+        documents_dir = os.path.join(settings.BASE_DIR, 'documents')
+        os.makedirs(documents_dir, exist_ok=True)
+
+        filename = self.get_document_filename()
+        filepath = os.path.join(documents_dir, filename)
+        data = {
+            "id": self.id,
+            "template_name": self.template.name,
+            "title": self.title,
+            "data": self.data,
+            "status": self.status,
+            "CreatedAt": self.created_at.isoformat() if self.created_at else None,
+            "UpdatedAt": self.updated_at.isoformat() if self.updated_at else None,
+        }
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=2)
