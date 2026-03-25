@@ -2,6 +2,7 @@
   <div class="approval-component">
     <el-button v-if="!modelValue.name"
                type="warning"
+               icon="Medal"
                :disabled="disabled || (store.currentUser !== 'QA' && store.currentUser !== 'Admin')"
                @click="approve">
       Approve as QA
@@ -10,8 +11,11 @@
               :title="'QA Approved by ' + modelValue.name"
               type="warning"
               :description="formatDate(modelValue.timestamp)"
-              show-icon
-              :closable="false" />
+              :closable="false">
+      <template #icon>
+        <el-icon><Medal /></el-icon>
+      </template>
+    </el-alert>
   </div>
 </template>
 

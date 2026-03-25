@@ -2,6 +2,7 @@
   <div class="approval-component">
     <el-button v-if="!modelValue.name"
                type="primary"
+               icon="Medal"
                :disabled="disabled || (store.currentUser !== 'Operator' && store.currentUser !== 'Admin')"
                @click="approve">
       Approve as Operator
@@ -10,8 +11,11 @@
               :title="'Approved by ' + modelValue.name"
               type="success"
               :description="formatDate(modelValue.timestamp)"
-              show-icon
-              :closable="false" />
+              :closable="false">
+      <template #icon>
+        <el-icon><Medal /></el-icon>
+      </template>
+    </el-alert>
   </div>
 </template>
 
