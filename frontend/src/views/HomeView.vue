@@ -287,6 +287,8 @@ const confirmCreateDocument = async () => {
     dialogVisible.value = false
     ElMessage.success('Document created')
     fetchData()
+    router.push( `/documents/${res.data.id}` )
+
   } catch (error) {
     console.error('Error creating document:', error)
     ElMessage.error('Failed to create document')
