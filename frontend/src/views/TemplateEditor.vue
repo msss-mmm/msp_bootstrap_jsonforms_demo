@@ -4,6 +4,9 @@
       <template #content>
         <span class="text-large font-600 mr-3"> {{ isEdit ? 'Edit Template' : 'New Template' }} </span>
         <el-tag v-if="templateStatus" :type="getStatusType(templateStatus)" style="margin-left: 10px;">{{ templateStatus }}</el-tag>
+        <span v-if="isEdit" style="margin-left: 15px; font-size: 14px; color: #606266;">
+          In use by {{ documentCount }} {{ documentCount === 1 ? 'document' : 'documents' }}
+        </span>
       </template>
       <template #extra>
         <div class="flex items-center">
@@ -33,6 +36,7 @@ const store = useAppStore()
 const designer = ref(null)
 const templateName = ref('')
 const templateStatus = ref('Active')
+const documentCount = ref(0)
 const isEdit = computed(() => !!route.params.id)
 const hasChanges = ref(false)
 const isInitializing = ref(false)
@@ -110,6 +114,7 @@ const fetchTemplate = async () => {
 
       templateName.value = res.data.name
       templateStatus.value = res.data.status || 'Active'
+      documentCount.value = res.data.document_count || 0
 
       // Use nextTick or a short delay to ensure designer is mounted
       setTimeout(() => {

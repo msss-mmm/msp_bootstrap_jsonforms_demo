@@ -2,9 +2,14 @@ from rest_framework import serializers
 from .models import Template, DocumentInstance
 
 class TemplateSerializer(serializers.ModelSerializer):
+    document_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Template
         fields = '__all__'
+
+    def get_document_count(self, obj):
+        return obj.instances.count()
 
 class DocumentInstanceSerializer(serializers.ModelSerializer):
     template_name = serializers.ReadOnlyField(source='template.name')
