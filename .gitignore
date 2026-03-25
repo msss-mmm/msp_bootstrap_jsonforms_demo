@@ -6,7 +6,7 @@ __pycache__/
 .Python
 env/
 build/
-backend/templates/
+api/templates/
 develop-eggs/
 dist/
 downloads/
@@ -30,8 +30,8 @@ staticfiles/
 
 # Node/Vue
 node_modules/
-frontend/dist/
-frontend/node_modules/
+ui/dist/
+ui/node_modules/
 .DS_Store
 
 # Environments
