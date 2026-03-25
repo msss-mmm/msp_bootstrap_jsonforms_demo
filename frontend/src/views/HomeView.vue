@@ -40,7 +40,23 @@
           </el-table-column>
           <el-table-column label="Status" width="120">
             <template #default="scope">
-              <el-tag :type="getDocumentStatusType(scope.row.status)">
+              <el-popover v-if="store.currentUser === 'Admin'" placement="top" :width="280" trigger="click">
+                <template #reference>
+                  <el-tag :type="getDocumentStatusType(scope.row.status)" style="cursor: pointer">
+                    {{ scope.row.status }}
+                  </el-tag>
+                </template>
+                <div class="status-popover-content">
+                  <p><strong>Instructions:</strong></p>
+                  <p>• Active: Document can be edited by users with permission</p>
+                  <p>• Locked: Document cannot be edited by anyone</p>
+                  <div style="margin-top: 10px;">
+                    <el-button v-if="scope.row.status === 'Active'" size="small" type="warning" @click="updateDocumentStatus(scope.row, 'Locked')">Lock</el-button>
+                    <el-button v-else-if="scope.row.status === 'Locked'" size="small" type="success" @click="updateDocumentStatus(scope.row, 'Active')">Unlock</el-button>
+                  </div>
+                </div>
+              </el-popover>
+              <el-tag v-else :type="getDocumentStatusType(scope.row.status)">
                 {{ scope.row.status }}
               </el-tag>
             </template>
@@ -50,7 +66,7 @@
               {{ new Date(scope.row.created_at).toLocaleString() }}
             </template>
           </el-table-column>
-          <el-table-column label="Actions" width="220" align="center">
+          <el-table-column label="Actions" width="160" align="center">
             <template #default="scope">
               <el-button v-if="scope.row.status === 'Active'" size="small" type="primary" @click="$router.push(`/documents/${scope.row.id}`)">
                 {{ store.currentUser === 'QA' ? 'View/Approve' : 'Edit' }}
@@ -58,8 +74,6 @@
               <el-button v-else-if="scope.row.status === 'Locked'" size="small" @click="$router.push(`/documents/${scope.row.id}`)">View</el-button>
 
               <template v-if="store.currentUser === 'Admin'">
-                <el-button v-if="scope.row.status === 'Active'" size="small" type="warning" @click="updateDocumentStatus(scope.row, 'Locked')">Lock</el-button>
-                <el-button v-if="scope.row.status === 'Locked'" size="small" type="success" @click="updateDocumentStatus(scope.row, 'Active')">Unlock</el-button>
                 <el-button size="small" type="danger" @click="updateDocumentStatus(scope.row, 'Archived')">Archive</el-button>
               </template>
             </template>
