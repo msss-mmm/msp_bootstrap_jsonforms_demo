@@ -1,6 +1,6 @@
 <template>
   <div class="document-detail">
-    <el-page-header @back="$router.push('/')">
+    <el-page-header @back="handleBack">
       <template #content>
         <span class="text-large font-600 mr-3"> {{ doc?.title || 'Loading...' }} </span>
         <el-tag v-if="doc" type="info">{{ doc.template_name }}</el-tag>
@@ -16,7 +16,8 @@
             </el-tag>
           </template>
           <el-button type="primary" icon="Printer" @click="printDocument">Print to PDF</el-button>
-          <el-button @click="$router.push('/')">Done</el-button>
+          <el-button @click="discardChanges">Discard Changes</el-button>
+          <el-button type="primary" @click="saveDocument">Save Document</el-button>
         </div>
       </template>
     </el-page-header>
@@ -37,11 +38,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,8 +50,32 @@ const store = useAppStore()
 const fApi = ref({})
 const doc = ref(null)
 const formData = ref({})
+const hasChanges = ref(false)
+const isInitializing = ref(false)
 
 const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
+
+onBeforeRouteLeave((to, from, next) => {
+  if (hasChanges.value) {
+    ElMessageBox.confirm(
+      'You have unsaved changes. Are you sure you want to leave?',
+      'Warning',
+      {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    )
+      .then(() => {
+        next()
+      })
+      .catch(() => {
+        next(false)
+      })
+  } else {
+    next()
+  }
+})
 
 const computedOptions = computed(() => {
   if (!doc.value) return {}
@@ -103,6 +128,7 @@ const computedRule = computed(() => {
 
 const fetchDoc = async () => {
   try {
+    isInitializing.value = true
     const res = await axios.get(`${store.apiUrl}/documents/${route.params.id}/`)
 
     // Redirect if archived as it should not be viewable
@@ -120,9 +146,17 @@ const fetchDoc = async () => {
       template_options: templateRes.data.options
     }
     formData.value = res.data.data
+
+    await nextTick()
+    // Mark as done initializing after a slight delay
+    setTimeout(() => {
+      isInitializing.value = false
+      hasChanges.value = false
+    }, 100)
   } catch (error) {
     console.error(error)
     ElMessage.error('Failed to load document')
+    isInitializing.value = false
   }
 }
 
@@ -135,6 +169,15 @@ const getStatusType = (status) => {
   }
 }
 
+const handleBack = () => {
+  router.push('/')
+}
+
+const discardChanges = () => {
+  hasChanges.value = false
+  router.push('/')
+}
+
 const saveDocument = async (showMsg = true) => {
   if (isLocked.value) return
   try {
@@ -145,6 +188,7 @@ const saveDocument = async (showMsg = true) => {
       data: currentData
     })
     if (showMsg) ElMessage.success('Document saved')
+    hasChanges.value = false
   } catch (error) {
     console.error(error)
     ElMessage.error('Failed to save document')
@@ -160,6 +204,7 @@ const lockDocument = async () => {
       status: 'Locked'
     })
     ElMessage.success('Document locked')
+    hasChanges.value = false
     fetchDoc()
   } catch (error) {
     console.error(error)
@@ -172,8 +217,9 @@ const printDocument = () => {
 }
 
 const onFormChange = () => {
-  // Auto-save changes for time-stamped activities like approvals
-  saveDocument(false)
+  if (!isInitializing.value) {
+    hasChanges.value = true
+  }
 }
 
 onMounted(fetchDoc)

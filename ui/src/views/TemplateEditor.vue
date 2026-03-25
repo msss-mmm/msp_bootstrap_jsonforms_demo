@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
@@ -116,18 +116,17 @@ const fetchTemplate = async () => {
       templateStatus.value = res.data.status || 'Active'
       documentCount.value = res.data.document_count || 0
 
-      // Use nextTick or a short delay to ensure designer is mounted
-      setTimeout(() => {
-        if (designer.value) {
-          designer.value.setRule(res.data.rule)
-          designer.value.setOption(res.data.options)
-          // Mark as done initializing after a slight delay to allow @change events from setRule to settle
-          setTimeout(() => {
-            isInitializing.value = false
-            hasChanges.value = false
-          }, 100)
-        }
-      }, 200)
+      // Use nextTick and a slight delay to ensure designer is mounted and settled
+      await nextTick()
+      if (designer.value) {
+        designer.value.setRule(res.data.rule)
+        designer.value.setOption(res.data.options)
+        // Mark as done initializing after a slight delay to allow @change events from setRule to settle
+        setTimeout(() => {
+          isInitializing.value = false
+          hasChanges.value = false
+        }, 100)
+      }
     } catch (error) {
       console.error(error)
       ElMessage.error('Failed to load template')
