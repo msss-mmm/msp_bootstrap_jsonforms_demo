@@ -15,6 +15,7 @@
               {{ doc.status }}
             </el-tag>
           </template>
+          <el-button type="primary" icon="Printer" @click="printDocument">Print to PDF</el-button>
           <el-button @click="discardChanges">Discard Changes</el-button>
           <el-button type="primary" @click="saveDocument">Save Document</el-button>
         </div>
@@ -211,6 +212,10 @@ const lockDocument = async () => {
   }
 }
 
+const printDocument = () => {
+  window.print()
+}
+
 const onFormChange = () => {
   if (!isInitializing.value) {
     hasChanges.value = true
@@ -235,5 +240,30 @@ onMounted(fetchDoc)
 
 .loading-state {
   margin-top: 50px;
+}
+
+@media print {
+  :deep(.el-page-header__back),
+  :deep(.el-page-header__extra),
+  :deep(.el-button),
+  .no-print {
+    display: none !important;
+  }
+
+  .document-detail {
+    padding: 0;
+  }
+
+  .form-container {
+    margin-top: 0;
+    box-shadow: none;
+    padding: 20px;
+  }
+
+  /* Ensure the title is prominent in print */
+  :deep(.el-page-header__content) {
+    font-size: 24px;
+    font-weight: bold;
+  }
 }
 </style>

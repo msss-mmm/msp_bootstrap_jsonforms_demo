@@ -1,6 +1,6 @@
 <template>
   <el-container class="app-container">
-    <el-header class="header">
+    <el-header class="header no-print">
       <div class="header-left">
         <router-link to="/" class="logo">{{ appTitle }}</router-link>
         <el-menu mode="horizontal" :ellipsis="false" router class="header-menu" :default-active="$route.path">
@@ -97,5 +97,11 @@ html, body, #app {
   color: #409eff;
   display: flex;
   align-items: center;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }
 </style>
