@@ -51,14 +51,14 @@ The easiest way to get the system running is using Docker Compose:
 ```bash
 docker-compose up --build
 ```
-This will start both the backend and frontend services.
+This will start both the api and ui services.
 
 ### Manual Installation
 
-#### Backend Setup
-1. Navigate to the backend directory:
+#### API Setup
+1. Navigate to the api directory:
    ```bash
-   cd backend
+   cd api
    ```
 2. Install dependencies:
    ```bash
@@ -74,10 +74,10 @@ This will start both the backend and frontend services.
    python manage.py runserver
    ```
 
-#### Frontend Setup
-1. Navigate to the frontend directory:
+#### UI Setup
+1. Navigate to the ui directory:
    ```bash
-   cd frontend
+   cd ui
    ```
 2. Install dependencies:
    ```bash
@@ -90,4 +90,4 @@ This will start both the backend and frontend services.
 
 ## Management Commands
 - `python manage.py seed_data`: Populates the database with example computer-themed templates and documents.
-- `python manage.py prime_templates`: Synchronizes the database with JSON template definitions found in `backend/templates/`.
+- `python manage.py prime_templates`: Synchronizes the database with JSON template definitions found in `api/templates/`.
