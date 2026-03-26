@@ -189,12 +189,13 @@
       <el-form label-position="top" @submit.prevent="confirmCreateTemplate">
         <el-form-item label="Template Name">
           <el-input v-model="newTemplateName" placeholder="Enter template name (e.g., Quality Check)" />
+          <div v-if="isTemplateNameDuplicate" class="error-text">name exists</div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="templateDialogVisible = false">Cancel</el-button>
-          <el-button type="primary" @click="confirmCreateTemplate">Create</el-button>
+          <el-button type="primary" :disabled="!newTemplateName || isTemplateNameDuplicate" @click="confirmCreateTemplate">Create</el-button>
         </span>
       </template>
     </el-dialog>
@@ -231,6 +232,10 @@ const archivedDocuments = computed(() => documents.value.filter(d => d.status ==
 
 const isDocTitleDuplicate = computed(() => {
   return documents.value.some(d => d.title === newDocTitle.value)
+})
+
+const isTemplateNameDuplicate = computed(() => {
+  return templates.value.some(t => t.name === newTemplateName.value)
 })
 
 const fetchData = async () => {
@@ -315,19 +320,14 @@ const confirmCreateDocument = async () => {
 }
 
 const handleNewTemplate = () => {
-  newTemplateName.value = `Template - ${new Date().toLocaleDateString()}`
+  const now = new Date()
+  const dateStr = now.toISOString().split('T')[0].replace(/-/g, '/')
+  newTemplateName.value = `Template - ${dateStr}`
   templateDialogVisible.value = true
 }
 
 const confirmCreateTemplate = () => {
-  if (!newTemplateName.value) {
-    ElMessage.warning('Please enter a template name')
-    return
-  }
-
-  const nameExists = templates.value.some(t => t.name.toLowerCase() === newTemplateName.value.toLowerCase())
-  if (nameExists) {
-    ElMessage.warning('A template with this name already exists')
+  if (!newTemplateName.value || isTemplateNameDuplicate.value) {
     return
   }
 
