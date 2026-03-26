@@ -12,6 +12,7 @@
         <div class="flex items-center">
           <el-input v-model="templateName" placeholder="Template Name" style="width: 250px; margin-right: 15px;" @input="hasChanges = true" />
           <el-button @click="discardChanges">Discard Changes</el-button>
+          <el-button type="info" @click="cloneTemplate">Clone Template</el-button>
           <el-button type="primary" @click="saveTemplate">Save Template</el-button>
         </div>
       </template>
@@ -40,6 +41,12 @@ const documentCount = ref(0)
 const isEdit = computed(() => !!route.params.id)
 const hasChanges = ref(false)
 const isInitializing = ref(false)
+
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId !== oldId) {
+    fetchTemplate()
+  }
+})
 
 onBeforeRouteLeave((to, from, next) => {
   if (hasChanges.value) {
@@ -135,6 +142,9 @@ const fetchTemplate = async () => {
   } else if (route.query.name) {
     templateName.value = route.query.name
     hasChanges.value = true
+
+    // Clear the name from query to avoid it overriding when cloning/saving
+    router.replace({ query: {} })
   }
 }
 
@@ -173,17 +183,55 @@ const saveTemplate = async () => {
     if (isEdit.value) {
       await axios.put(`${store.apiUrl}/templates/${route.params.id}/`, payload)
       ElMessage.success('Template updated')
-      hasChanges.value = false
+      nextTick(() => { hasChanges.value = false })
     } else {
       const res = await axios.post(`${store.apiUrl}/templates/`, payload)
       ElMessage.success('Template created')
       hasChanges.value = false
-      // Redirect to the edit page for the newly created template
-      router.push(`/templates/${res.data.id}/edit`)
+      isInitializing.value = true
+      router.replace({
+        name: 'edit-template',
+        params: { id: res.data.id }
+      })
     }
   } catch (error) {
     console.error(error)
     ElMessage.error('Failed to save template')
+  }
+}
+
+const cloneTemplate = async () => {
+  const now = new Date()
+  const dateStr = now.toISOString().split('T')[0].replace(/-/g, '/')
+  const newName = `${templateName.value} ${dateStr}`
+
+  const rule = designer.value.getRule()
+  const options = designer.value.getOption()
+
+  const payload = {
+    name: newName,
+    rule: rule,
+    options: options,
+    status: 'Active'
+  }
+
+  try {
+    const res = await axios.post(`${store.apiUrl}/templates/`, payload)
+    ElMessage.success('Template cloned successfully')
+    hasChanges.value = false
+    isInitializing.value = true
+    router.push({
+      name: 'edit-template',
+      params: { id: res.data.id },
+      query: {}
+    })
+  } catch (error) {
+    console.error(error)
+    if (error.response && error.response.data && error.response.data.name) {
+      ElMessage.error(`Failed to clone: ${error.response.data.name[0]}`)
+    } else {
+      ElMessage.error('Failed to clone template')
+    }
   }
 }
 
