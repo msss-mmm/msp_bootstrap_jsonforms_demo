@@ -29,6 +29,8 @@ class Template(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # Sync to directory
+        if getattr(settings, 'SKIP_JSON_SYNC', False):
+            return
         templates_dir = os.path.join(settings.BASE_DIR, 'templates')
         os.makedirs(templates_dir, exist_ok=True)
 
@@ -71,6 +73,8 @@ class DocumentInstance(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # Sync to directory
+        if getattr(settings, 'SKIP_JSON_SYNC', False):
+            return
         documents_dir = os.path.join(settings.BASE_DIR, 'documents')
         os.makedirs(documents_dir, exist_ok=True)
 

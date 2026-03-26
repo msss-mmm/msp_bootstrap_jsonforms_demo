@@ -1,9 +1,10 @@
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 from core.middleware import XForwardedPrefixMiddleware
 from core.models import Template, DocumentInstance
 
+@override_settings(SKIP_JSON_SYNC=True)
 class MiddlewareTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -38,6 +39,7 @@ class MiddlewareTests(TestCase):
         self.assertEqual(request.environ.get('SCRIPT_NAME', ''), '')
         self.assertEqual(request.path_info, '/api/documents/')
 
+@override_settings(SKIP_JSON_SYNC=True)
 class ModelTests(TestCase):
     def setUp(self):
         self.template = Template.objects.create(
@@ -83,6 +85,7 @@ class ModelTests(TestCase):
         doc.save()
         self.assertEqual(doc.status, "Archived")
 
+@override_settings(SKIP_JSON_SYNC=True)
 class APITests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -138,6 +141,28 @@ class APITests(TestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(DocumentInstance.objects.count(), 2)
+
+    def test_create_template_duplicate_name(self):
+        url = reverse('template-list')
+        data = {
+            "name": "Test Template",
+            "rule": [{"rule": "new"}],
+            "status": "Active"
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('name', response.data)
+
+    def test_create_document_duplicate_title(self):
+        url = reverse('documentinstance-list')
+        data = {
+            "template": self.template.id,
+            "title": "Test Document",
+            "status": "Active"
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('title', response.data)
 
     def test_approval_status(self):
         url = reverse('documentinstance-list')
