@@ -173,12 +173,13 @@
       <el-form label-position="top" @submit.prevent="confirmCreateDocument">
         <el-form-item label="Document Title">
           <el-input v-model="newDocTitle" placeholder="Enter document title (e.g., SN-12345)" />
+          <div v-if="isDocTitleDuplicate" class="error-text">name exists</div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">Cancel</el-button>
-          <el-button type="primary" @click="confirmCreateDocument">Create</el-button>
+          <el-button type="primary" :disabled="!newDocTitle || isDocTitleDuplicate" @click="confirmCreateDocument">Create</el-button>
         </span>
       </template>
     </el-dialog>
@@ -227,6 +228,10 @@ const archivedTemplates = computed(() => templates.value.filter(t => t.status ==
 
 const activeDocuments = computed(() => documents.value.filter(d => d.status !== 'Archived'))
 const archivedDocuments = computed(() => documents.value.filter(d => d.status === 'Archived'))
+
+const isDocTitleDuplicate = computed(() => {
+  return documents.value.some(d => d.title === newDocTitle.value)
+})
 
 const fetchData = async () => {
   try {
@@ -360,5 +365,11 @@ onMounted(fetchData)
 
 .main-tabs {
   margin-bottom: 20px;
+}
+
+.error-text {
+  color: #F56C6C;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

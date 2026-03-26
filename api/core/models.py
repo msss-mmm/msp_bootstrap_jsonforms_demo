@@ -54,7 +54,7 @@ class DocumentInstance(models.Model):
         ('Archived', 'Archived'),
     ]
     template = models.ForeignKey(Template, on_delete=models.CASCADE, related_name='instances')
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, unique=True)
     data = models.JSONField(default=dict, blank=True, help_text="Form data (JSON)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
     created_at = models.DateTimeField(auto_now_add=True)
