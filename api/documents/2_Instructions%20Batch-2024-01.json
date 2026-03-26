@@ -1,0 +1,20 @@
+{
+  "id": 2,
+  "template_name": "Computer Assembly Instructions",
+  "title": "Instructions Batch-2024-01",
+  "data": {
+    "part_number": "GAMING-PC-01",
+    "revision": "B",
+    "op_app_1": {
+      "name": "Operator",
+      "timestamp": "2024-03-21T11:00:00Z"
+    },
+    "qa_app_1": {
+      "name": "QA",
+      "timestamp": "2024-03-21T11:10:00Z"
+    }
+  },
+  "status": "Active",
+  "CreatedAt": "2026-03-26T02:04:21.011690+00:00",
+  "UpdatedAt": "2026-03-26T02:04:21.011719+00:00"
+}

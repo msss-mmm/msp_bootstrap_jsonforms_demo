@@ -1,0 +1,22 @@
+{
+  "id": 1,
+  "template_name": "Computer Assembly Traveler",
+  "title": "Traveler SN-A100-01",
+  "data": {
+    "work_order": "WO-2024-001",
+    "part_number": "CB-X1-PRO",
+    "quantity": 5,
+    "op_app_10": {
+      "name": "Operator",
+      "timestamp": "2024-03-21T10:00:00Z"
+    },
+    "qa_app_10": {
+      "name": "QA",
+      "timestamp": "2024-03-21T10:05:00Z"
+    },
+    "notes_10": "Circuit board installed correctly. All screws tightened."
+  },
+  "status": "Active",
+  "CreatedAt": "2026-03-26T02:04:21.002741+00:00",
+  "UpdatedAt": "2026-03-26T02:04:21.002774+00:00"
+}
