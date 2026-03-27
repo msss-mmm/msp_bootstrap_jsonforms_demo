@@ -107,7 +107,18 @@ watch([doc, () => store.currentUser, isLocked], () => {
 
   // 2. Process Rule
   const rule = formCreate.parseJson(JSON.stringify(doc.value.template_rule))
-  const swapTypes = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
+  const swapTypes = [
+    'input', 'inputNumber', 'checkbox', 'radio', 'select',
+    'datePicker', 'timePicker', 'switch', 'slider', 'rate',
+    'cascader', 'colorPicker'
+  ]
+
+  const resolveDefaultValue = (r) => {
+    if (r.props && r.props._prefilledValue !== undefined) return r.props._prefilledValue
+    if (r._prefilledValue !== undefined) return r._prefilledValue
+    if (r.defaultValue !== undefined) return r.defaultValue
+    return r.value
+  }
 
   const processRuleInternal = (rules) => {
     rules.forEach(r => {
@@ -116,7 +127,7 @@ watch([doc, () => store.currentUser, isLocked], () => {
         const originalType = r.type
         const originalProps = { ...r.props }
         const options = r.options || []
-        const templateValue = r.defaultValue !== undefined ? r.defaultValue : r.value
+        const templateValue = resolveDefaultValue(r)
 
         // Wrap with ReadOnlyField
         r.type = 'ReadOnlyField'
@@ -129,9 +140,13 @@ watch([doc, () => store.currentUser, isLocked], () => {
       }
 
       // 2. Clean up rules to prevent "revert on focus out"
-      // Deleting static values ensures that the live formData is the source of truth
+      // Deleting all possible static value sources ensures that the live formData is the single source of truth.
       delete r.value
       delete r.defaultValue
+      delete r._prefilledValue
+      if (r.props) {
+        delete r.props._prefilledValue
+      }
 
       // 2. Default Access Control
       // If QA, everything except QA approval is disabled
@@ -185,10 +200,17 @@ const fetchDoc = async () => {
     // Merge template default values with document data
     // Document data takes precedence.
     const mergedData = { ...res.data.data }
+
+    const resolveDefaultValueInternal = (r) => {
+      if (r.props && r.props._prefilledValue !== undefined) return r.props._prefilledValue
+      if (r._prefilledValue !== undefined) return r._prefilledValue
+      if (r.defaultValue !== undefined) return r.defaultValue
+      return r.value
+    }
+
     const extractDefaults = (rules) => {
       rules.forEach(r => {
-        // Try both 'defaultValue' (our new field) and 'value' (standard)
-        const defVal = r.defaultValue !== undefined ? r.defaultValue : r.value
+        const defVal = resolveDefaultValueInternal(r)
 
         if (r.field && defVal !== undefined && (mergedData[r.field] === undefined || mergedData[r.field] === null || mergedData[r.field] === '')) {
           let finalVal = defVal

@@ -279,18 +279,24 @@ const isWorkflowRegistered = ref(false)
 const addValuePropToComponents = () => {
   if (!designer.value || !designer.value.setComponentRuleConfig) return false
 
-  const components = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
+  // List of all components that should support pre-filling and read-only mode
+  const components = [
+    'input', 'inputNumber', 'checkbox', 'radio', 'select',
+    'datePicker', 'timePicker', 'switch', 'slider', 'rate',
+    'cascader', 'colorPicker'
+  ]
+
   components.forEach(name => {
     try {
-      // Use setComponentRuleConfig to add both 'defaultValue' and 'readonly' fields to the Basis section.
-      // We use 'defaultValue' instead of 'value' to avoid internal conflicts in the designer
-      // that cause the field to revert on focus out.
+      // Use setComponentRuleConfig to add custom pre-fill and readonly fields to the Basis section.
+      // We use 'props._prefilledValue' to keep it separated from the standard 'value'
+      // which causes conflicts in some designer versions.
       designer.value.setComponentRuleConfig(name, () => [
-        { type: 'input', field: 'defaultValue', title: 'Default Value' },
+        { type: 'input', field: 'props._prefilledValue', title: 'Default Value' },
         { type: 'switch', field: 'props.readonly', title: 'Readonly' }
       ], true)
     } catch (e) {
-      console.error(`Failed to add value/readonly prop to ${name}:`, e)
+      console.error(`Failed to add props to ${name}:`, e)
     }
   })
   return true

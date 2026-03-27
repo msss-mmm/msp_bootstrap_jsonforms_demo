@@ -62,9 +62,13 @@ const props = defineProps({
 })
 
 const effectiveValue = computed(() => {
+  const templateVal = (props.originalProps && props.originalProps._prefilledValue !== undefined)
+    ? props.originalProps._prefilledValue
+    : props.templateValue
+
   let val = (props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== '')
     ? props.modelValue
-    : props.templateValue
+    : templateVal
 
   // For checkboxes, ensure the value is an array
   if (props.originalType === 'checkbox') {
