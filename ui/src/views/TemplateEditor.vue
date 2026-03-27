@@ -46,6 +46,7 @@ import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import formCreate from '@form-create/element-ui'
 
 const route = useRoute()
 const router = useRouter()
@@ -158,8 +159,8 @@ const fetchTemplate = async () => {
       // Use nextTick and a slight delay to ensure designer is mounted and settled
       await nextTick()
       if (designer.value) {
-        designer.value.setRule(res.data.rule)
-        designer.value.setOption(res.data.options)
+        designer.value.setRule(formCreate.parseJson(JSON.stringify(res.data.rule)))
+        designer.value.setOption(formCreate.parseJson(JSON.stringify(res.data.options)))
         // Mark as done initializing after a slight delay to allow @change events from setRule to settle
         setTimeout(() => {
           isInitializing.value = false
