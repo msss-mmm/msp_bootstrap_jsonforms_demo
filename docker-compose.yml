@@ -45,7 +45,7 @@ services:
       context: ./ui
       dockerfile: Dockerfile.editor
     ports:
-      - "3000:3000"
+      - "3000:80"
     volumes:
       - ./api/templates:/app/templates
       - ./api/documents:/app/documents
