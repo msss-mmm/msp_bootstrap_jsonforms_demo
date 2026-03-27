@@ -1,5 +1,5 @@
 <template>
-  <div class="read-only-field" :style="containerStyle" :class="{ 'has-value': hasValue }">
+  <div class="read-only-field" :style="containerStyle" :class="{ 'has-value': hasAnyContent }">
     <template v-if="isCollection">
       <component
         :is="getComponentTag(originalType)"
@@ -62,14 +62,17 @@ const props = defineProps({
 })
 
 const effectiveValue = computed(() => {
-  const val = (props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== '')
+  let val = (props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== '')
     ? props.modelValue
     : props.templateValue
 
   // For checkboxes, ensure the value is an array
   if (props.originalType === 'checkbox') {
     if (val === null || val === undefined || val === '') return []
-    if (typeof val === 'string') return val.split(',').map(s => s.trim())
+    if (typeof val === 'string') {
+        // Support comma-separated strings for checkboxes
+        val = val.split(',').map(s => s.trim()).filter(s => s)
+    }
     return Array.isArray(val) ? val : [val]
   }
   return val
@@ -89,6 +92,10 @@ const hasValue = computed(() => {
   if (value === null || value === undefined || value === '') return false
   if (Array.isArray(value) && value.length === 0) return false
   return true
+})
+
+const hasAnyContent = computed(() => {
+  return hasValue.value || !!props.originalProps.placeholder
 })
 
 const getComponentTag = (type) => {

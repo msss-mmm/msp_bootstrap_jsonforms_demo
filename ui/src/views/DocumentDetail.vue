@@ -116,7 +116,7 @@ watch([doc, () => store.currentUser, isLocked], () => {
         const originalType = r.type
         const originalProps = { ...r.props }
         const options = r.options || []
-        const templateValue = r.value // FormCreate stores default value here
+        const templateValue = r.defaultValue !== undefined ? r.defaultValue : r.value
 
         // Wrap with ReadOnlyField
         r.type = 'ReadOnlyField'
@@ -127,6 +127,11 @@ watch([doc, () => store.currentUser, isLocked], () => {
           templateValue: templateValue
         }
       }
+
+      // 2. Clean up rules to prevent "revert on focus out"
+      // Deleting static values ensures that the live formData is the source of truth
+      delete r.value
+      delete r.defaultValue
 
       // 2. Default Access Control
       // If QA, everything except QA approval is disabled
@@ -182,8 +187,16 @@ const fetchDoc = async () => {
     const mergedData = { ...res.data.data }
     const extractDefaults = (rules) => {
       rules.forEach(r => {
-        if (r.field && r.value !== undefined && mergedData[r.field] === undefined) {
-          mergedData[r.field] = r.value
+        // Try both 'defaultValue' (our new field) and 'value' (standard)
+        const defVal = r.defaultValue !== undefined ? r.defaultValue : r.value
+
+        if (r.field && defVal !== undefined && (mergedData[r.field] === undefined || mergedData[r.field] === null || mergedData[r.field] === '')) {
+          let finalVal = defVal
+          // Coerce checkbox values to array if needed
+          if (r.type === 'checkbox' && typeof finalVal === 'string') {
+            finalVal = finalVal.split(',').map(s => s.trim()).filter(s => s)
+          }
+          mergedData[r.field] = finalVal
         }
         if (r.children && Array.isArray(r.children)) extractDefaults(r.children)
         if (r.control && Array.isArray(r.control)) {

@@ -282,9 +282,11 @@ const addValuePropToComponents = () => {
   const components = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
   components.forEach(name => {
     try {
-      // Use setComponentRuleConfig to add both 'value' and 'readonly' fields to the Basis section
+      // Use setComponentRuleConfig to add both 'defaultValue' and 'readonly' fields to the Basis section.
+      // We use 'defaultValue' instead of 'value' to avoid internal conflicts in the designer
+      // that cause the field to revert on focus out.
       designer.value.setComponentRuleConfig(name, () => [
-        { type: 'input', field: 'value', title: 'Default Value' },
+        { type: 'input', field: 'defaultValue', title: 'Default Value' },
         { type: 'switch', field: 'props.readonly', title: 'Readonly' }
       ], true)
     } catch (e) {
