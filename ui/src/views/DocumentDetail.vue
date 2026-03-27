@@ -43,6 +43,7 @@ import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import formCreate from '@form-create/element-ui'
 
 const route = useRoute()
 const router = useRouter()
@@ -79,7 +80,7 @@ onBeforeRouteLeave((to, from, next) => {
 
 const computedOptions = computed(() => {
   if (!doc.value) return {}
-  const options = { ...doc.value.template_options }
+  const options = formCreate.parseJson(JSON.stringify(doc.value.template_options))
 
   options.submitBtn = false
   options.resetBtn = false
@@ -87,6 +88,7 @@ const computedOptions = computed(() => {
   if (isLocked.value) {
     options.disabled = true
     options.form = {
+      ...options.form,
       disabled: true
     }
   }
@@ -95,7 +97,7 @@ const computedOptions = computed(() => {
 
 const computedRule = computed(() => {
   if (!doc.value) return []
-  const rule = JSON.parse(JSON.stringify(doc.value.template_rule))
+  const rule = formCreate.parseJson(JSON.stringify(doc.value.template_rule))
 
   const processRule = (rules) => {
     rules.forEach(r => {
