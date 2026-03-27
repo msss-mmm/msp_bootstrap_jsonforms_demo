@@ -33,7 +33,6 @@
 
 <script setup>
 import { useAppStore } from './stores/app'
-import { ArrowDown } from '@element-plus/icons-vue'
 const store = useAppStore()
 
 const appTitle = import.meta.env.VITE_APP_TITLE || 'App'

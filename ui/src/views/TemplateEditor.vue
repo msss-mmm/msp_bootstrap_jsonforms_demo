@@ -44,7 +44,7 @@ import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { FormBuilder } from '@backoffice-plus/formbuilder'
-import '@backoffice-plus/formbuilder/dist/style.css'
+import '@backoffice-plus/formbuilder/style.css'
 
 const route = useRoute()
 const router = useRouter()
