@@ -107,20 +107,24 @@ watch([doc, () => store.currentUser, isLocked], () => {
 
   // 2. Process Rule
   const rule = formCreate.parseJson(JSON.stringify(doc.value.template_rule))
+  const swapTypes = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
+
   const processRuleInternal = (rules) => {
     rules.forEach(r => {
       // 1. Swap components for Read-only if needed
-      if (r.props && r.props.readonly) {
+      if (r.props && r.props.readonly && swapTypes.includes(r.type)) {
         const originalType = r.type
         const originalProps = { ...r.props }
         const options = r.options || []
+        const templateValue = r.value // FormCreate stores default value here
 
         // Wrap with ReadOnlyField
         r.type = 'ReadOnlyField'
         r.props = {
           originalType: originalType,
           originalProps: originalProps,
-          options: options
+          options: options,
+          templateValue: templateValue
         }
       }
 
@@ -139,10 +143,12 @@ watch([doc, () => store.currentUser, isLocked], () => {
           r.props.disabled = true
         }
       }
-      if (r.children) processRuleInternal(r.children)
-      if (r.control) {
+
+      // Always recurse regardless of swap
+      if (r.children && Array.isArray(r.children)) processRuleInternal(r.children)
+      if (r.control && Array.isArray(r.control)) {
         r.control.forEach(c => {
-          if (c.rule) processRuleInternal(c.rule)
+          if (c.rule && Array.isArray(c.rule)) processRuleInternal(c.rule)
         })
       }
     })

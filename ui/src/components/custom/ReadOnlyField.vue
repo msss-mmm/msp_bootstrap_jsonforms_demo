@@ -1,5 +1,5 @@
 <template>
-  <div class="read-only-field" :style="containerStyle">
+  <div class="read-only-field" :style="containerStyle" :class="{ 'has-value': hasValue }">
     <template v-if="isCollection">
       <component
         :is="getComponentTag(originalType)"
@@ -49,6 +49,7 @@ import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   modelValue: [String, Number, Boolean, Array, Object],
+  templateValue: [String, Number, Boolean, Array, Object],
   originalType: String,
   originalProps: {
     type: Object,
@@ -60,13 +61,26 @@ const props = defineProps({
   }
 })
 
-const internalValue = ref(props.modelValue)
-watch(() => props.modelValue, (val) => {
+const effectiveValue = computed(() => {
+  return (props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== '')
+    ? props.modelValue
+    : props.templateValue
+})
+
+const internalValue = ref(effectiveValue.value)
+watch(effectiveValue, (val) => {
   internalValue.value = val
 })
 
 const isCollection = computed(() => {
   return ['checkbox', 'radio', 'select'].includes(props.originalType)
+})
+
+const hasValue = computed(() => {
+  const value = effectiveValue.value
+  if (value === null || value === undefined || value === '') return false
+  if (Array.isArray(value) && value.length === 0) return false
+  return true
 })
 
 const getComponentTag = (type) => {
@@ -79,22 +93,22 @@ const getComponentTag = (type) => {
 }
 
 const displayValue = computed(() => {
-  if (props.modelValue === null || props.modelValue === undefined || props.modelValue === '') {
-    return '-'
+  if (!hasValue.value) {
+    return props.originalProps.placeholder || '-'
   }
 
+  const value = effectiveValue.value
   if (props.originalType === 'datePicker' || props.originalType === 'timePicker') {
-    if (Array.isArray(props.modelValue)) {
-      return props.modelValue.join(' to ')
+    if (Array.isArray(value)) {
+      return value.join(' to ')
     }
-    return props.modelValue
+    return value
   }
 
-  return props.modelValue
+  return value
 })
 
 const containerStyle = computed(() => {
-  // Try to preserve some height to keep alignment
   return {
     minHeight: '32px',
     display: 'flex',
@@ -110,12 +124,15 @@ const containerStyle = computed(() => {
 
 .plain-text-value {
   font-size: 14px;
-  color: #303133; /* Dark text for readability */
+  color: #303133;
   line-height: 1.5;
   padding: 0;
 }
 
-/* Override Element Plus disabled styles for collections to make them look "locked but readable" */
+.read-only-field:not(.has-value) .plain-text-value {
+  color: #C0C4CC;
+}
+
 :deep(.locked-collection.el-checkbox-group),
 :deep(.locked-collection.el-radio-group) {
   opacity: 1 !important;
@@ -157,7 +174,6 @@ const containerStyle = computed(() => {
   color: #606266 !important;
 }
 
-/* Select component handling */
 :deep(.locked-collection.el-select .el-input.is-disabled .el-input__wrapper) {
   background-color: transparent !important;
   box-shadow: none !important;

@@ -276,6 +276,24 @@ const confirmCloneTemplate = async () => {
 }
 
 const isWorkflowRegistered = ref(false)
+const addValuePropToComponents = () => {
+  if (!designer.value || !designer.value.setComponentRuleConfig) return false
+
+  const components = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
+  components.forEach(name => {
+    try {
+      // Correct usage of setComponentRuleConfig: pass a rule generating function
+      // and set append=true to add the field to the Basis section of the Props tab.
+      designer.value.setComponentRuleConfig(name, () => [
+        { type: 'input', field: 'value', title: 'Default Value' }
+      ], true)
+    } catch (e) {
+      console.error(`Failed to add value prop to ${name}:`, e)
+    }
+  })
+  return true
+}
+
 const registerCustomComponents = () => {
   if (!designer.value) return false
   if (isWorkflowRegistered.value) return true
@@ -338,24 +356,6 @@ const registerCustomComponents = () => {
   return true
 }
 
-const addValuePropToComponents = () => {
-  if (!designer.value) return
-
-  const components = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
-  components.forEach(name => {
-    try {
-      const props = designer.value.getProps(name)
-      if (props && !props.find(p => p.field === 'value')) {
-        // Add Default Value prop at the beginning of the Props tab
-        props.unshift({ type: 'input', field: 'value', title: 'Default Value' })
-        designer.value.setProps(name, props)
-      }
-    } catch (e) {
-      console.error(`Failed to add value prop to ${name}:`, e)
-    }
-  })
-}
-
 let registrationInterval = null
 
 onMounted(() => {
@@ -366,8 +366,8 @@ onMounted(() => {
   registrationInterval = setInterval(() => {
     if (designer.value && designer.value.addMenu) {
       const workflowRegistered = registerCustomComponents()
-      addValuePropToComponents()
-      if (workflowRegistered) {
+      const propsRegistered = addValuePropToComponents()
+      if (workflowRegistered && propsRegistered) {
         clearInterval(registrationInterval)
         registrationInterval = null
       }
