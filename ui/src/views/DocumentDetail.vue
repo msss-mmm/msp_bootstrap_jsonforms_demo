@@ -8,16 +8,16 @@
       <template #extra>
         <div v-if="doc" style="display: flex; gap: 10px; align-items: center;">
           <template v-if="doc.status === 'Active'">
-            <el-button v-if="store.currentUser === 'Admin'" type="warning" plain icon="Lock" @click="lockDocument">Lock Document</el-button>
+            <el-button v-if="store.currentUser === 'Admin'" type="warning" @click="lockDocument">Lock Document</el-button>
           </template>
           <template v-else>
             <el-tag :type="getStatusType(doc.status)" size="large" effect="dark">
               {{ doc.status }}
             </el-tag>
           </template>
-          <el-button type="primary" plain icon="Printer" @click="printDocument">Print to PDF</el-button>
-          <el-button type="danger" plain icon="Delete" @click="discardChanges">Discard Changes</el-button>
-          <el-button type="primary" plain icon="DocumentChecked" @click="saveDocument">Save Document</el-button>
+          <el-button type="primary" icon="Printer" @click="printDocument">Print to PDF</el-button>
+          <el-button @click="discardChanges">Discard Changes</el-button>
+          <el-button type="primary" @click="saveDocument">Save Document</el-button>
         </div>
       </template>
     </el-page-header>
@@ -81,6 +81,9 @@ onBeforeRouteLeave((to, from, next) => {
 const computedOptions = computed(() => {
   if (!doc.value) return {}
   const options = formCreate.parseJson(JSON.stringify(doc.value.template_options))
+
+  // Ensure global injection is enabled for event handlers
+  options.inject = true
 
   options.submitBtn = false
   options.resetBtn = false
