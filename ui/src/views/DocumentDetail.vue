@@ -88,7 +88,7 @@ const computedOptions = computed(() => {
   if (isLocked.value) {
     options.disabled = true
     options.form = {
-      ...options.form,
+      ...(options.form || {}),
       disabled: true
     }
   }
