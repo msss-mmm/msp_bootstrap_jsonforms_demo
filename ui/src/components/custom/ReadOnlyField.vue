@@ -62,9 +62,17 @@ const props = defineProps({
 })
 
 const effectiveValue = computed(() => {
-  return (props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== '')
+  const val = (props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== '')
     ? props.modelValue
     : props.templateValue
+
+  // For checkboxes, ensure the value is an array
+  if (props.originalType === 'checkbox') {
+    if (val === null || val === undefined || val === '') return []
+    if (typeof val === 'string') return val.split(',').map(s => s.trim())
+    return Array.isArray(val) ? val : [val]
+  }
+  return val
 })
 
 const internalValue = ref(effectiveValue.value)
@@ -93,11 +101,11 @@ const getComponentTag = (type) => {
 }
 
 const displayValue = computed(() => {
+  const value = effectiveValue.value
   if (!hasValue.value) {
     return props.originalProps.placeholder || '-'
   }
 
-  const value = effectiveValue.value
   if (props.originalType === 'datePicker' || props.originalType === 'timePicker') {
     if (Array.isArray(value)) {
       return value.join(' to ')

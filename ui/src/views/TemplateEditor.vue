@@ -282,13 +282,13 @@ const addValuePropToComponents = () => {
   const components = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
   components.forEach(name => {
     try {
-      // Correct usage of setComponentRuleConfig: pass a rule generating function
-      // and set append=true to add the field to the Basis section of the Props tab.
+      // Use setComponentRuleConfig to add both 'value' and 'readonly' fields to the Basis section
       designer.value.setComponentRuleConfig(name, () => [
-        { type: 'input', field: 'value', title: 'Default Value' }
+        { type: 'input', field: 'value', title: 'Default Value' },
+        { type: 'switch', field: 'props.readonly', title: 'Readonly' }
       ], true)
     } catch (e) {
-      console.error(`Failed to add value prop to ${name}:`, e)
+      console.error(`Failed to add value/readonly prop to ${name}:`, e)
     }
   })
   return true

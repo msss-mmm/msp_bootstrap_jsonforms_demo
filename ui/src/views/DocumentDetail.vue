@@ -176,7 +176,25 @@ const fetchDoc = async () => {
       template_rule: templateRes.data.rule,
       template_options: templateRes.data.options
     }
-    formData.value = res.data.data
+
+    // Merge template default values with document data
+    // Document data takes precedence.
+    const mergedData = { ...res.data.data }
+    const extractDefaults = (rules) => {
+      rules.forEach(r => {
+        if (r.field && r.value !== undefined && mergedData[r.field] === undefined) {
+          mergedData[r.field] = r.value
+        }
+        if (r.children && Array.isArray(r.children)) extractDefaults(r.children)
+        if (r.control && Array.isArray(r.control)) {
+          r.control.forEach(c => {
+            if (c.rule && Array.isArray(c.rule)) extractDefaults(c.rule)
+          })
+        }
+      })
+    }
+    extractDefaults(templateRes.data.rule)
+    formData.value = mergedData
 
     await nextTick()
     // Mark as done initializing after a slight delay
