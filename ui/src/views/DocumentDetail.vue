@@ -109,6 +109,22 @@ watch([doc, () => store.currentUser, isLocked], () => {
   const rule = formCreate.parseJson(JSON.stringify(doc.value.template_rule))
   const processRuleInternal = (rules) => {
     rules.forEach(r => {
+      // 1. Swap components for Read-only if needed
+      if (r.props && r.props.readonly) {
+        const originalType = r.type
+        const originalProps = { ...r.props }
+        const options = r.options || []
+
+        // Wrap with ReadOnlyField
+        r.type = 'ReadOnlyField'
+        r.props = {
+          originalType: originalType,
+          originalProps: originalProps,
+          options: options
+        }
+      }
+
+      // 2. Default Access Control
       // If QA, everything except QA approval is disabled
       if (store.currentUser === 'QA' && !isLocked.value) {
         if (r.type !== 'QAApprove') {

@@ -13,9 +13,11 @@ import locale from '@form-create/designer/locale/en'
 
 import OperatorApprove from './components/custom/OperatorApprove.vue'
 import QAApprove from './components/custom/QAApprove.vue'
+import ReadOnlyField from './components/custom/ReadOnlyField.vue'
 
 formCreate.component('OperatorApprove', OperatorApprove)
 formCreate.component('QAApprove', QAApprove)
+formCreate.component('ReadOnlyField', ReadOnlyField)
 
 const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {

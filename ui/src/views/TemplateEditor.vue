@@ -338,6 +338,24 @@ const registerCustomComponents = () => {
   return true
 }
 
+const addValuePropToComponents = () => {
+  if (!designer.value) return
+
+  const components = ['input', 'inputNumber', 'checkbox', 'radio', 'select', 'datePicker', 'timePicker']
+  components.forEach(name => {
+    try {
+      const props = designer.value.getProps(name)
+      if (props && !props.find(p => p.field === 'value')) {
+        // Add Default Value prop at the beginning of the Props tab
+        props.unshift({ type: 'input', field: 'value', title: 'Default Value' })
+        designer.value.setProps(name, props)
+      }
+    } catch (e) {
+      console.error(`Failed to add value prop to ${name}:`, e)
+    }
+  })
+}
+
 let registrationInterval = null
 
 onMounted(() => {
@@ -347,7 +365,9 @@ onMounted(() => {
   // Use a retry interval to ensure the designer instance is ready
   registrationInterval = setInterval(() => {
     if (designer.value && designer.value.addMenu) {
-      if (registerCustomComponents()) {
+      const workflowRegistered = registerCustomComponents()
+      addValuePropToComponents()
+      if (workflowRegistered) {
         clearInterval(registrationInterval)
         registrationInterval = null
       }
