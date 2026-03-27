@@ -12,7 +12,7 @@
     "@jsonforms/core": "^3.4.0",
     "@jsonforms/vue": "^3.4.0",
     "@jsonforms/vue-vanilla": "^3.4.0",
-    "@backoffice-plus/formbuilder": "^0.1.0",
+    "@backoffice-plus/formbuilder": "^0.0.50",
     "axios": "^1.13.6",
     "pinia": "^3.0.4",
     "qrcode.vue": "^3.8.0",

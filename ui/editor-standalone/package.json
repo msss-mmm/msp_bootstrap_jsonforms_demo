@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "vue": "^3.3.4",
-    "@backoffice-plus/formbuilder": "^0.1.0"
+    "@backoffice-plus/formbuilder": "^0.0.50"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",
