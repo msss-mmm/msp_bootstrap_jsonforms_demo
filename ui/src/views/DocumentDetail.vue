@@ -1,148 +1,78 @@
 <template>
   <div class="document-detail">
-    <el-page-header @back="handleBack">
-      <template #content>
-        <span class="text-large font-600 mr-3"> {{ doc?.title || 'Loading...' }} </span>
-        <el-tag v-if="doc" type="info">{{ doc.template_name }}</el-tag>
-      </template>
-      <template #extra>
-        <div v-if="doc" style="display: flex; gap: 10px; align-items: center;">
+    <div class="header no-print">
+       <button @click="handleBack">Back</button>
+       <span class="title">{{ doc?.title || 'Loading...' }}</span>
+       <span class="tag">{{ doc?.template_name }}</span>
+
+       <div v-if="doc" class="actions">
           <template v-if="doc.status === 'Active'">
-            <el-button v-if="store.currentUser === 'Admin'" type="warning" plain icon="Lock" @click="lockDocument">Lock Document</el-button>
+            <button v-if="store.currentUser === 'Admin'" @click="lockDocument">Lock Document</button>
           </template>
           <template v-else>
-            <el-tag :type="getStatusType(doc.status)" size="large" effect="dark">
-              {{ doc.status }}
-            </el-tag>
+            <span class="status-tag">{{ doc.status }}</span>
           </template>
-          <el-button type="primary" plain icon="Printer" @click="printDocument">Print to PDF</el-button>
-          <el-button type="danger" plain icon="Delete" @click="discardChanges">Discard Changes</el-button>
-          <el-button type="primary" plain icon="DocumentChecked" @click="saveDocument">Save Document</el-button>
-        </div>
-      </template>
-    </el-page-header>
+          <button @click="printDocument">Print to PDF</button>
+          <button @click="discardChanges">Discard Changes</button>
+          <button @click="saveDocument">Save Document</button>
+       </div>
+    </div>
 
     <div v-if="doc" class="form-container">
-      <form-create
-        v-model:api="fApi"
-        :rule="processedRule"
-        :option="processedOptions"
-        v-model="formData"
+      <json-forms
+        :data="formData"
+        :schema="doc.template_schema"
+        :uischema="doc.template_uischema"
+        :renderers="renderers"
         @change="onFormChange"
       />
     </div>
     <div v-else class="loading-state">
-      <el-skeleton :rows="5" animated />
+      Loading...
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import formCreate from '@form-create/element-ui'
+import { JsonForms } from '@jsonforms/vue'
+import { vanillaRenderers } from '@jsonforms/vue-vanilla'
 
 const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
-const fApi = ref({})
-// Debug helper for console
-watch(fApi, (newApi) => {
-  if (newApi && newApi.fields) {
-    window.fApi = newApi
-  }
-})
+
 const doc = ref(null)
 const formData = ref({})
 const hasChanges = ref(false)
 const isInitializing = ref(false)
-const processedRule = ref([])
-const processedOptions = ref({})
+
+const renderers = Object.freeze([...vanillaRenderers])
 
 const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
 
 onBeforeRouteLeave((to, from, next) => {
   if (hasChanges.value) {
-    ElMessageBox.confirm(
-      'You have unsaved changes. Are you sure you want to leave?',
-      'Warning',
-      {
-        confirmButtonText: 'OK',
-        cancelButtonText: 'Cancel',
-        type: 'warning',
-      }
-    )
-      .then(() => {
-        next()
-      })
-      .catch(() => {
-        next(false)
-      })
+    if (confirm('You have unsaved changes. Are you sure you want to leave?')) {
+      next()
+    } else {
+      next(false)
+    }
   } else {
     next()
   }
 })
-
-// Watch for changes that require re-processing the rule or options
-watch([doc, () => store.currentUser, isLocked], () => {
-  if (!doc.value) return
-
-  // 1. Process Options
-  const options = formCreate.parseJson(JSON.stringify(doc.value.template_options))
-  options.inject = true
-  options.submitBtn = false
-  options.resetBtn = false
-
-  if (isLocked.value) {
-    options.disabled = true
-    options.form = {
-      ...(options.form || {}),
-      disabled: true
-    }
-  }
-  processedOptions.value = options
-
-  // 2. Process Rule
-  const rule = formCreate.parseJson(JSON.stringify(doc.value.template_rule))
-  const processRuleInternal = (rules) => {
-    rules.forEach(r => {
-      // If QA, everything except QA approval is disabled
-      if (store.currentUser === 'QA' && !isLocked.value) {
-        if (r.type !== 'QAApprove') {
-          r.props = r.props || {}
-          r.props.disabled = true
-        }
-      }
-      // If Operator, QA approval is disabled
-      if (store.currentUser === 'Operator' && !isLocked.value) {
-        if (r.type === 'QAApprove') {
-          r.props = r.props || {}
-          r.props.disabled = true
-        }
-      }
-      if (r.children) processRuleInternal(r.children)
-      if (r.control) {
-        r.control.forEach(c => {
-          if (c.rule) processRuleInternal(c.rule)
-        })
-      }
-    })
-  }
-  processRuleInternal(rule)
-  processedRule.value = rule
-}, { immediate: true, deep: true })
 
 const fetchDoc = async () => {
   try {
     isInitializing.value = true
     const res = await axios.get(`${store.apiUrl}/documents/${route.params.id}/`)
 
-    // Redirect if archived as it should not be viewable
     if (res.data.status === 'Archived') {
-      ElMessage.warning('Archived documents cannot be viewed')
+      alert('Archived documents cannot be viewed')
       router.push('/')
       return
     }
@@ -151,30 +81,19 @@ const fetchDoc = async () => {
 
     doc.value = {
       ...res.data,
-      template_rule: templateRes.data.rule,
-      template_options: templateRes.data.options
+      template_schema: templateRes.data.schema,
+      template_uischema: templateRes.data.uischema
     }
     formData.value = res.data.data
 
-    await nextTick()
-    // Mark as done initializing after a slight delay
     setTimeout(() => {
       isInitializing.value = false
       hasChanges.value = false
     }, 100)
   } catch (error) {
     console.error(error)
-    ElMessage.error('Failed to load document')
+    alert('Failed to load document')
     isInitializing.value = false
-  }
-}
-
-const getStatusType = (status) => {
-  switch (status) {
-    case 'Active': return 'success'
-    case 'Locked': return 'warning'
-    case 'Archived': return 'danger'
-    default: return ''
   }
 }
 
@@ -190,34 +109,30 @@ const discardChanges = () => {
 const saveDocument = async (showMsg = true) => {
   if (isLocked.value) return
   try {
-    // Ensure all data is captured from FormCreate
-    const currentData = fApi.value.formData()
-
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: currentData
+      data: formData.value
     })
-    if (showMsg) ElMessage.success('Document saved')
+    if (showMsg) alert('Document saved')
     hasChanges.value = false
   } catch (error) {
     console.error(error)
-    ElMessage.error('Failed to save document')
+    alert('Failed to save document')
   }
 }
 
 const lockDocument = async () => {
   if (isLocked.value) return
   try {
-    const currentData = fApi.value.formData()
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: currentData,
+      data: formData.value,
       status: 'Locked'
     })
-    ElMessage.success('Document locked')
+    alert('Document locked')
     hasChanges.value = false
     fetchDoc()
   } catch (error) {
     console.error(error)
-    ElMessage.error('Failed to lock document')
+    alert('Failed to lock document')
   }
 }
 
@@ -225,8 +140,9 @@ const printDocument = () => {
   window.print()
 }
 
-const onFormChange = () => {
+const onFormChange = (event) => {
   if (!isInitializing.value) {
+    formData.value = event.data
     hasChanges.value = true
   }
 }
@@ -239,40 +155,48 @@ onMounted(fetchDoc)
   padding: 20px;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.tag {
+  background: #eee;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
 .form-container {
-  margin-top: 30px;
   background-color: #fff;
   padding: 40px;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-.loading-state {
-  margin-top: 50px;
-}
-
 @media print {
-  :deep(.el-page-header__back),
-  :deep(.el-page-header__extra),
-  :deep(.el-button),
   .no-print {
     display: none !important;
   }
 
-  .document-detail {
-    padding: 0;
-  }
-
   .form-container {
-    margin-top: 0;
     box-shadow: none;
-    padding: 20px;
-  }
-
-  /* Ensure the title is prominent in print */
-  :deep(.el-page-header__content) {
-    font-size: 24px;
-    font-weight: bold;
+    padding: 0;
   }
 }
 </style>

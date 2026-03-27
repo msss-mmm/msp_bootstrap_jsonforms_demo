@@ -25,8 +25,8 @@ class Command(BaseCommand):
                     if not name:
                         continue
 
-                    rule = data.get('rule', [])
-                    options_data = data.get('options', {})
+                    schema = data.get('schema', {})
+                    uischema = data.get('uischema', {})
                     status = data.get('status')
                     if not status:
                         is_active = data.get('is_active', True)
@@ -39,8 +39,8 @@ class Command(BaseCommand):
                     template, created = Template.objects.update_or_create(
                         name=name,
                         defaults={
-                            'rule': rule,
-                            'options': options_data,
+                            'schema': schema,
+                            'uischema': uischema,
                             'status': status,
                             'description': description
                         }

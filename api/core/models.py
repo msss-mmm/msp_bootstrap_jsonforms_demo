@@ -12,8 +12,8 @@ class Template(models.Model):
     ]
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
-    rule = models.JSONField(help_text="FormCreate rules (JSON)")
-    options = models.JSONField(default=dict, blank=True, help_text="FormCreate options (JSON)")
+    schema = models.JSONField(default=dict, blank=True, help_text="JSON Schema (data structure)")
+    uischema = models.JSONField(default=dict, blank=True, help_text="UI Schema (layout)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,8 +40,8 @@ class Template(models.Model):
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "rule": self.rule,
-            "options": self.options,
+            "schema": self.schema,
+            "uischema": self.uischema,
             "status": self.status,
             "CreatedAt": self.created_at.isoformat() if self.created_at else None,
             "UpdatedAt": self.updated_at.isoformat() if self.updated_at else None,

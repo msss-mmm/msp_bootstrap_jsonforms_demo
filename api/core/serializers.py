@@ -25,28 +25,36 @@ class DocumentInstanceSerializer(serializers.ModelSerializer):
         Helper to determine the approval status for a given component type.
         Returns: 'none', 'partial', or 'full'.
         """
-        template_rule = obj.template.rule
-        if not isinstance(template_rule, list):
+        # For JSON Forms, we'll look into the uischema for custom elements
+        uischema = obj.template.uischema
+        if not isinstance(uischema, dict):
             return 'none'
 
         field_names = []
 
-        def find_fields(rules):
-            if not isinstance(rules, list):
+        def find_fields(element):
+            if not isinstance(element, dict):
                 return
-            for r in rules:
-                if not isinstance(r, dict):
-                    continue
-                if r.get('type') == component_type:
-                    field_names.append(r.get('field'))
-                if 'children' in r:
-                    find_fields(r['children'])
-                if 'control' in r:
-                    for c in r['control']:
-                        if isinstance(c, dict) and 'rule' in c:
-                            find_fields(c['rule'])
 
-        find_fields(template_rule)
+            # JSON Forms uischema elements usually have a 'type' and sometimes a 'scope'
+            # Custom renderers might be identified by 'options.type' or similar
+            if element.get('options', {}).get('type') == component_type:
+                scope = element.get('scope')
+                if scope and scope.startswith('#/properties/'):
+                    field_names.append(scope.split('/')[-1])
+
+            # Recurse into layouts
+            if 'elements' in element and isinstance(element['elements'], list):
+                for child in element['elements']:
+                    find_fields(child)
+
+            if 'options' in element and isinstance(element['options'], dict):
+                # Some options might contain elements
+                if 'elements' in element['options'] and isinstance(element['options']['elements'], list):
+                    for child in element['options']['elements']:
+                        find_fields(child)
+
+        find_fields(uischema)
 
         if not field_names:
             return 'none'
