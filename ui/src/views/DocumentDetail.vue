@@ -25,8 +25,8 @@
     <div v-if="doc" class="form-container">
       <form-create
         v-model:api="fApi"
-        :rule="computedRule"
-        :option="computedOptions"
+        :rule="processedRule"
+        :option="processedOptions"
         v-model="formData"
         @change="onFormChange"
       />
@@ -49,10 +49,18 @@ const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
 const fApi = ref({})
+// Debug helper for console
+watch(fApi, (newApi) => {
+  if (newApi && newApi.fields) {
+    window.fApi = newApi
+  }
+})
 const doc = ref(null)
 const formData = ref({})
 const hasChanges = ref(false)
 const isInitializing = ref(false)
+const processedRule = ref([])
+const processedOptions = ref({})
 
 const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
 
@@ -78,10 +86,13 @@ onBeforeRouteLeave((to, from, next) => {
   }
 })
 
-const computedOptions = computed(() => {
-  if (!doc.value) return {}
-  const options = formCreate.parseJson(JSON.stringify(doc.value.template_options))
+// Watch for changes that require re-processing the rule or options
+watch([doc, () => store.currentUser, isLocked], () => {
+  if (!doc.value) return
 
+  // 1. Process Options
+  const options = formCreate.parseJson(JSON.stringify(doc.value.template_options))
+  options.inject = true
   options.submitBtn = false
   options.resetBtn = false
 
@@ -92,14 +103,11 @@ const computedOptions = computed(() => {
       disabled: true
     }
   }
-  return options
-})
+  processedOptions.value = options
 
-const computedRule = computed(() => {
-  if (!doc.value) return []
+  // 2. Process Rule
   const rule = formCreate.parseJson(JSON.stringify(doc.value.template_rule))
-
-  const processRule = (rules) => {
+  const processRuleInternal = (rules) => {
     rules.forEach(r => {
       // If QA, everything except QA approval is disabled
       if (store.currentUser === 'QA' && !isLocked.value) {
@@ -115,18 +123,17 @@ const computedRule = computed(() => {
           r.props.disabled = true
         }
       }
-      if (r.children) processRule(r.children)
+      if (r.children) processRuleInternal(r.children)
       if (r.control) {
         r.control.forEach(c => {
-          if (c.rule) processRule(c.rule)
+          if (c.rule) processRuleInternal(c.rule)
         })
       }
     })
   }
-
-  processRule(rule)
-  return rule
-})
+  processRuleInternal(rule)
+  processedRule.value = rule
+}, { immediate: true, deep: true })
 
 const fetchDoc = async () => {
   try {
