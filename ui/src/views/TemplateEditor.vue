@@ -10,7 +10,7 @@
       </template>
       <template #extra>
         <div class="flex items-center">
-          <el-input v-model="templateName" placeholder="Template Name" style="width: 250px; margin-right: 15px;" @input="hasChanges = true" />
+          <el-input v-model="templateName" placeholder="Template Name" style="width: 30em; margin-right: 15px;" @input="hasChanges = true" />
           <el-button type="danger" plain icon="Delete" @click="discardChanges">Discard Changes</el-button>
           <el-button type="primary" plain icon="CopyDocument" @click="cloneTemplate">Clone Template</el-button>
           <el-button type="primary" plain icon="DocumentChecked" @click="saveTemplate">Save Template</el-button>
