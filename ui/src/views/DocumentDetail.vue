@@ -86,7 +86,7 @@ import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { JsonForms } from '@jsonforms/vue'
-import { vanillaRenderers } from '@jsonforms/vue-vanilla'
+import { elementRenderers } from '../renderers'
 import ReadOnlyField from '../components/ReadOnlyField.vue'
 import ApprovalRenderer from '../components/ApprovalRenderer.vue'
 
@@ -100,7 +100,7 @@ const hasChanges = ref(false)
 const isInitializing = ref(false)
 const isPrinting = ref(false)
 
-const renderers = Object.freeze([...vanillaRenderers])
+const renderers = Object.freeze([...elementRenderers])
 
 const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
 

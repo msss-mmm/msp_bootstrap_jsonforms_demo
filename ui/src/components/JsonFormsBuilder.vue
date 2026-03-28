@@ -88,7 +88,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { JsonForms } from '@jsonforms/vue'
-import { vanillaRenderers } from '@jsonforms/vue-vanilla'
+import { elementRenderers } from '../renderers'
 import { Edit, Document, List, Check, Calendar, Timer, Delete } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -98,8 +98,25 @@ const props = defineProps({
 
 const emit = defineEmits(['update:schema', 'update:uischema'])
 
-const renderers = Object.freeze([...vanillaRenderers])
+const renderers = Object.freeze([...elementRenderers])
 const testData = ref({})
+
+// Initialize testData from schema defaults
+watch(() => props.schema, (newSchema) => {
+  const newData = { ...testData.value }
+  let changed = false
+  if (newSchema.properties) {
+    Object.keys(newSchema.properties).forEach(key => {
+      if (newSchema.properties[key].default !== undefined && newData[key] === undefined) {
+        newData[key] = newSchema.properties[key].default
+        changed = true
+      }
+    })
+  }
+  if (changed) {
+    testData.value = newData
+  }
+}, { immediate: true, deep: true })
 const selectedIndex = ref(-1)
 
 const paletteItems = [
@@ -220,7 +237,7 @@ const updateSchema = () => {
 
   if (selectedItem.value.hasDefault) {
     let val = selectedItem.value.default
-    if (val === undefined) {
+    if (val === undefined || val === null) {
       if (currentProps.type === 'number') val = 0
       else if (currentProps.type === 'boolean') val = false
       else if (currentProps.format === 'date') val = new Date().toISOString().split('T')[0]
@@ -232,12 +249,25 @@ const updateSchema = () => {
     if (currentProps.type === 'boolean') val = !!val
 
     currentProps.default = val
+    selectedItem.value.default = val
   } else {
     delete currentProps.default
   }
 
   newSchema.properties[fieldId] = currentProps
   emit('update:schema', newSchema)
+
+  // Sync testData when default value is changed in properties panel
+  if (currentProps.default !== undefined) {
+    testData.value = {
+      ...testData.value,
+      [fieldId]: currentProps.default
+    }
+  } else {
+    const newData = { ...testData.value }
+    delete newData[fieldId]
+    testData.value = newData
+  }
 }
 
 const updateUiSchema = () => {
@@ -272,7 +302,23 @@ const clearForm = () => {
 }
 
 const onFormChange = (event) => {
-  testData.value = event.data
+  if (event && event.data) {
+    testData.value = event.data
+    // Update schema defaults when form data changes
+    const newSchema = { ...props.schema }
+    let changed = false
+    Object.keys(event.data).forEach(key => {
+      if (newSchema.properties[key]) {
+        if (newSchema.properties[key].default !== event.data[key]) {
+          newSchema.properties[key].default = event.data[key]
+          changed = true
+        }
+      }
+    })
+    if (changed) {
+      emit('update:schema', newSchema)
+    }
+  }
 }
 </script>
 
