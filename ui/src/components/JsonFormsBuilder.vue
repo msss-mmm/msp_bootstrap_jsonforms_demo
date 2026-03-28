@@ -4,7 +4,7 @@
     <div class="sidebar palette no-print">
       <h3>Palette</h3>
       <div v-for="item in paletteItems"
-           :key="item.type"
+           :key="item.label"
            class="palette-item"
            draggable="true"
            @dragstart="onDragStart($event, item)">
@@ -99,10 +99,12 @@ const paletteItems = [
 ]
 
 const selectedItem = computed(() => {
-  if (selectedIndex.value === -1 || !props.uischema.elements[selectedIndex.value]) return null
+  if (selectedIndex.value === -1 || !props.uischema?.elements?.[selectedIndex.value]) return null
   const uielem = props.uischema.elements[selectedIndex.value]
-  const fieldId = uielem.scope.split('/').pop()
-  const schelem = props.schema.properties[fieldId] || {}
+  const fieldId = uielem.scope ? uielem.scope.split('/').pop() : ''
+  if (!fieldId) return null
+
+  const schelem = props.schema?.properties?.[fieldId] || {}
   return {
     id: fieldId,
     label: uielem.label || fieldId,
@@ -156,11 +158,12 @@ const onDrop = (event) => {
 }
 
 const getSubSchema = (uielem) => {
+  if (!uielem.scope) return { type: 'object', properties: {} }
   const fieldId = uielem.scope.split('/').pop()
   return {
     type: 'object',
     properties: {
-      [fieldId]: props.schema.properties[fieldId] || { type: 'string' }
+      [fieldId]: props.schema?.properties?.[fieldId] || { type: 'string' }
     }
   }
 }
@@ -170,8 +173,11 @@ const selectElement = (index) => {
 }
 
 const updateFieldId = (newId) => {
-  if (!newId || selectedIndex.value === -1) return
-  const oldId = props.uischema.elements[selectedIndex.value].scope.split('/').pop()
+  if (!newId || selectedIndex.value === -1 || !props.uischema?.elements?.[selectedIndex.value]) return
+  const uielem = props.uischema.elements[selectedIndex.value]
+  if (!uielem.scope) return
+
+  const oldId = uielem.scope.split('/').pop()
   if (oldId === newId) return
 
   const newSchema = { ...props.schema }
@@ -185,8 +191,11 @@ const updateFieldId = (newId) => {
 }
 
 const updateSchema = () => {
-  if (selectedIndex.value === -1) return
-  const fieldId = props.uischema.elements[selectedIndex.value].scope.split('/').pop()
+  if (selectedIndex.value === -1 || !props.uischema?.elements?.[selectedIndex.value]) return
+  const uielem = props.uischema.elements[selectedIndex.value]
+  if (!uielem.scope) return
+
+  const fieldId = uielem.scope.split('/').pop()
   const newSchema = { ...props.schema }
   newSchema.properties[fieldId] = {
     ...newSchema.properties[fieldId],
@@ -198,15 +207,18 @@ const updateSchema = () => {
 }
 
 const updateUiSchema = () => {
-  if (selectedIndex.value === -1) return
+  if (selectedIndex.value === -1 || !props.uischema?.elements?.[selectedIndex.value]) return
   const newUiSchema = { ...props.uischema }
   newUiSchema.elements[selectedIndex.value].label = selectedItem.value.label
   emit('update:uischema', newUiSchema)
 }
 
 const removeSelected = () => {
-  if (selectedIndex.value === -1) return
-  const fieldId = props.uischema.elements[selectedIndex.value].scope.split('/').pop()
+  if (selectedIndex.value === -1 || !props.uischema?.elements?.[selectedIndex.value]) return
+  const uielem = props.uischema.elements[selectedIndex.value]
+  if (!uielem.scope) return
+
+  const fieldId = uielem.scope.split('/').pop()
 
   const newSchema = { ...props.schema }
   delete newSchema.properties[fieldId]
