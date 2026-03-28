@@ -9,8 +9,9 @@
     </header>
     <div class="editor-container">
       <form-builder
-        v-model:schema="schema"
-        v-model:uischema="uischema"
+        :schema="schema"
+        :uischema="uischema"
+        @schemaUpdated="onSchemaUpdated"
       />
     </div>
     <div class="preview-panel">
@@ -32,6 +33,11 @@ const uischema = ref({
   type: 'VerticalLayout',
   elements: []
 })
+
+const onSchemaUpdated = (newSchema) => {
+  schema.value = newSchema.schema
+  uischema.value = newSchema.uischema
+}
 
 const exportData = () => {
   const data = JSON.stringify({ schema: schema.value, uischema: uischema.value }, null, 2)

@@ -16,9 +16,9 @@
 
     <div class="designer-container">
       <form-builder
-        v-model:schema="schema"
-        v-model:uischema="uischema"
-        @change="onDesignerChange"
+        :schema="schema"
+        :uischema="uischema"
+        @schemaUpdated="onSchemaUpdated"
       />
     </div>
 
@@ -146,8 +146,10 @@ const discardChanges = () => {
   router.push('/')
 }
 
-const onDesignerChange = () => {
+const onSchemaUpdated = (newSchema) => {
   if (!isInitializing.value) {
+    schema.value = newSchema.schema
+    uischema.value = newSchema.uischema
     hasChanges.value = true
   }
 }
