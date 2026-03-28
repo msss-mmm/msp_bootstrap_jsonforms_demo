@@ -14,27 +14,47 @@
     </div>
 
     <!-- Center: Canvas (Live Preview) -->
-    <div class="canvas" @dragover.prevent @drop="onDrop">
+    <div class="canvas" @dragover.prevent="onDragOver($event, -1)" @drop="onDrop">
       <div class="canvas-header">
         <h3>Form Canvas</h3>
         <el-button size="small" type="danger" icon="Delete" plain @click="clearForm">Clear Form</el-button>
       </div>
-      <div class="canvas-content">
-         <div v-if="uischema.elements.length === 0" class="empty-canvas">
+      <div class="canvas-content" :class="{ 'is-dragging-over': isDragging }">
+         <div v-if="uischema.elements.length === 0 && !isDragging" class="empty-canvas">
             <el-empty description="Drag and drop elements here" />
          </div>
-         <div v-for="(element, index) in uischema.elements"
-              :key="index"
-              class="canvas-element"
-              :class="{ selected: selectedIndex === index }"
-              @click="selectElement(index)">
-            <json-forms
-              :data="testData"
-              :schema="getSubSchema(element)"
-              :uischema="element"
-              :renderers="renderers"
-              @change="onFormChange"
-            />
+
+         <template v-for="(element, index) in uischema.elements" :key="index">
+            <!-- Ghost before if inserting at this index -->
+            <div v-if="isDragging && currentInsertIndex === index" class="drag-ghost">
+               <el-icon><component :is="draggedItem?.icon || 'Edit'" /></el-icon>
+               <span>{{ draggedItemLabel }}</span>
+            </div>
+
+            <div class="canvas-element"
+                 :class="{
+                   selected: selectedIndex === index,
+                   'is-dragging': isDragging && draggedItem?.source === 'canvas' && draggedItem?.index === index
+                 }"
+                 draggable="true"
+                 @dragstart="onDragStartElement($event, index)"
+                 @dragover.stop.prevent="onDragOver($event, index)"
+                 @dragend="onDragEnd"
+                 @click="selectElement(index)">
+               <json-forms
+                 :data="testData"
+                 :schema="getSubSchema(element)"
+                 :uischema="element"
+                 :renderers="renderers"
+                 @change="onFormChange"
+               />
+            </div>
+         </template>
+
+         <!-- Ghost at the end if inserting at the end -->
+         <div v-if="isDragging && currentInsertIndex === uischema.elements.length" class="drag-ghost">
+            <el-icon><component :is="draggedItem?.icon || 'Edit'" /></el-icon>
+            <span>{{ draggedItemLabel }}</span>
          </div>
       </div>
     </div>
@@ -102,6 +122,21 @@ const renderers = Object.freeze([...vanillaRenderers])
 const testData = ref({})
 const selectedIndex = ref(-1)
 
+// Drag and drop state
+const isDragging = ref(false)
+const draggedItem = ref(null) // { type, source: 'palette' | 'canvas', index? }
+const draggedOverIndex = ref(-1)
+const dropPosition = ref('bottom') // 'top' | 'bottom'
+
+const currentInsertIndex = computed(() => {
+  if (draggedOverIndex.value === -1) return props.uischema.elements.length
+  return dropPosition.value === 'bottom' ? draggedOverIndex.value + 1 : draggedOverIndex.value
+})
+
+const draggedItemLabel = computed(() => {
+  return draggedItem.value?.label || 'New Field'
+})
+
 const paletteItems = [
   { label: 'Text Input', type: 'string', icon: 'Edit' },
   { label: 'Number Input', type: 'number', icon: 'Document' },
@@ -132,45 +167,113 @@ const selectedItem = computed(() => {
 })
 
 const onDragStart = (event, item) => {
+  isDragging.value = true
+  draggedItem.value = { ...item, source: 'palette' }
+  event.dataTransfer.effectAllowed = 'move'
+  // We still set data for compatibility, but we'll use our reactive state
   event.dataTransfer.setData('application/json', JSON.stringify(item))
 }
 
+const onDragStartElement = (event, index) => {
+  isDragging.value = true
+  const element = props.uischema.elements[index]
+  const fieldId = element.scope.split('/').pop()
+  const schemaPart = props.schema.properties[fieldId]
+
+  draggedItem.value = {
+    source: 'canvas',
+    index,
+    label: element.label || fieldId,
+    type: schemaPart.type,
+    format: schemaPart.format,
+    options: element.options
+  }
+  event.dataTransfer.effectAllowed = 'move'
+  selectedIndex.value = index
+}
+
+const onDragOver = (event, index = -1) => {
+  if (!isDragging.value) return
+
+  if (index === -1) {
+    // Over the general canvas area
+    draggedOverIndex.value = -1
+    dropPosition.value = 'bottom'
+    return
+  }
+
+  draggedOverIndex.value = index
+  const rect = event.currentTarget.getBoundingClientRect()
+  const relativeY = event.clientY - rect.top
+  dropPosition.value = relativeY < rect.height / 2 ? 'top' : 'bottom'
+}
+
+const onDragEnd = () => {
+  isDragging.value = false
+  draggedItem.value = null
+  draggedOverIndex.value = -1
+}
+
 const onDrop = (event) => {
-  const data = event.dataTransfer.getData('application/json')
-  if (!data) return
-  const item = JSON.parse(data)
-  const id = `field_${Date.now()}`
+  if (!draggedItem.value) return
 
-  const newSchema = { ...props.schema }
-  newSchema.properties[id] = {
-    type: item.type,
-    description: '',
-    readOnly: false
-  }
-  if (item.format) {
-    newSchema.properties[id].format = item.format
-  }
-  if (item.type === 'object' && item.options) {
-    newSchema.properties[id].properties = {
-      name: { type: 'string' },
-      timestamp: { type: 'string' }
-    }
-  }
-  emit('update:schema', newSchema)
-
+  const item = draggedItem.value
   const newUiSchema = { ...props.uischema }
-  const newElement = {
-    type: 'Control',
-    scope: `#/properties/${id}`,
-    label: item.label
-  }
-  if (item.options) {
-    newElement.options = item.options
-  }
-  newUiSchema.elements.push(newElement)
-  emit('update:uischema', newUiSchema)
+  const newSchema = { ...props.schema }
 
-  selectedIndex.value = newUiSchema.elements.length - 1
+  let targetIndex = draggedOverIndex.value
+  if (targetIndex === -1) {
+    targetIndex = newUiSchema.elements.length
+  } else if (dropPosition.value === 'bottom') {
+    targetIndex += 1
+  }
+
+  if (item.source === 'palette') {
+    const id = `field_${Date.now()}`
+    newSchema.properties[id] = {
+      type: item.type,
+      description: '',
+      readOnly: false
+    }
+    if (item.format) {
+      newSchema.properties[id].format = item.format
+    }
+    if (item.type === 'object' && item.options) {
+      newSchema.properties[id].properties = {
+        name: { type: 'string' },
+        timestamp: { type: 'string' }
+      }
+    }
+
+    const newElement = {
+      type: 'Control',
+      scope: `#/properties/${id}`,
+      label: item.label
+    }
+    if (item.options) {
+      newElement.options = item.options
+    }
+
+    newUiSchema.elements.splice(targetIndex, 0, newElement)
+    selectedIndex.value = targetIndex
+  } else if (item.source === 'canvas') {
+    const oldIndex = item.index
+    const elementToMove = newUiSchema.elements[oldIndex]
+
+    // Adjust target index if moving from before to after
+    let finalTargetIndex = targetIndex
+    if (oldIndex < targetIndex) {
+      finalTargetIndex -= 1
+    }
+
+    newUiSchema.elements.splice(oldIndex, 1)
+    newUiSchema.elements.splice(finalTargetIndex, 0, elementToMove)
+    selectedIndex.value = finalTargetIndex
+  }
+
+  emit('update:schema', newSchema)
+  emit('update:uischema', newUiSchema)
+  onDragEnd()
 }
 
 const getSubSchema = (uielem) => {
@@ -357,6 +460,38 @@ const onFormChange = (event) => {
   border-color: #409eff;
   background: #ecf5ff;
   box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.1);
+}
+
+.canvas-element.is-dragging {
+  opacity: 0.4;
+  border: 1px dashed #409eff;
+  cursor: move;
+}
+
+.drag-ghost {
+  height: 40px;
+  background: rgba(64, 158, 255, 0.1);
+  border: 2px dashed #409eff;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #409eff;
+  font-weight: bold;
+  pointer-events: none;
+  animation: ghost-pulse 1.5s infinite;
+}
+
+@keyframes ghost-pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.is-dragging-over {
+  border-color: #409eff !important;
 }
 
 .empty-canvas {
