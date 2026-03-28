@@ -53,11 +53,25 @@
           <el-form-item label="Description">
             <el-input v-model="selectedItem.description" @input="updateSchema" />
           </el-form-item>
-          <el-form-item label="Default Value">
-             <el-input v-model="selectedItem.default" @input="updateSchema" />
-          </el-form-item>
           <el-form-item>
             <el-checkbox v-model="selectedItem.readOnly" @change="updateSchema">Read Only</el-checkbox>
+          </el-form-item>
+          <el-form-item>
+            <template #label>
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span>{{ selectedItem.readOnly ? 'Constant Value' : 'Default Value' }}</span>
+                <el-switch v-model="selectedItem.hasDefault" @change="updateSchema" size="small" />
+              </div>
+            </template>
+            <template v-if="selectedItem.hasDefault">
+              <el-input v-if="selectedItem.type === 'string' && !selectedItem.format" v-model="selectedItem.default" @input="updateSchema" />
+              <el-input-number v-else-if="selectedItem.type === 'number'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" />
+              <el-checkbox v-else-if="selectedItem.type === 'boolean'" v-model="selectedItem.default" @change="updateSchema">Active</el-checkbox>
+              <el-date-picker v-else-if="selectedItem.format === 'date'" v-model="selectedItem.default" type="date" value-format="YYYY-MM-DD" @change="updateSchema" style="width: 100%" />
+              <el-time-picker v-else-if="selectedItem.format === 'time'" v-model="selectedItem.default" value-format="HH:mm:ss" @change="updateSchema" style="width: 100%" />
+              <el-input v-else v-model="selectedItem.default" @input="updateSchema" />
+            </template>
+            <div v-else style="color: #909399; font-size: 12px; font-style: italic;">No value specified</div>
           </el-form-item>
            <el-form-item>
             <el-button type="danger" icon="Delete" plain @click="removeSelected">Delete Element</el-button>
@@ -107,9 +121,12 @@ const selectedItem = computed(() => {
   const schelem = props.schema?.properties?.[fieldId] || {}
   return {
     id: fieldId,
+    type: schelem.type,
+    format: schelem.format,
     label: uielem.label || fieldId,
     description: schelem.description || '',
-    default: schelem.default || '',
+    default: schelem.default,
+    hasDefault: schelem.default !== undefined,
     readOnly: schelem.readOnly || false
   }
 })
@@ -128,7 +145,6 @@ const onDrop = (event) => {
   newSchema.properties[id] = {
     type: item.type,
     description: '',
-    default: '',
     readOnly: false
   }
   if (item.format) {
@@ -197,12 +213,30 @@ const updateSchema = () => {
 
   const fieldId = uielem.scope.split('/').pop()
   const newSchema = { ...props.schema }
-  newSchema.properties[fieldId] = {
-    ...newSchema.properties[fieldId],
-    description: selectedItem.value.description,
-    default: selectedItem.value.default,
-    readOnly: selectedItem.value.readOnly
+  const currentProps = { ...newSchema.properties[fieldId] }
+
+  currentProps.description = selectedItem.value.description
+  currentProps.readOnly = selectedItem.value.readOnly
+
+  if (selectedItem.value.hasDefault) {
+    let val = selectedItem.value.default
+    if (val === undefined) {
+      if (currentProps.type === 'number') val = 0
+      else if (currentProps.type === 'boolean') val = false
+      else if (currentProps.format === 'date') val = new Date().toISOString().split('T')[0]
+      else if (currentProps.format === 'time') val = '12:00:00'
+      else val = ''
+    }
+    // Ensure correct types
+    if (currentProps.type === 'number') val = Number(val) || 0
+    if (currentProps.type === 'boolean') val = !!val
+
+    currentProps.default = val
+  } else {
+    delete currentProps.default
   }
+
+  newSchema.properties[fieldId] = currentProps
   emit('update:schema', newSchema)
 }
 
