@@ -34,10 +34,10 @@ services:
     volumes:
       - ./api/templates:/home/coder/project/templates
       - ./api/documents:/home/coder/project/documents
-      - ./vscode-config:/home/coder/.local/share/code-server
+      - vscode_config:/home/coder/.local/share/code-server
     environment:
       - CS_DISABLE_AUTH=true
-    command: sh -c "code-server --install-extension miragon-gmbh.miranum-json-forms && exec code-server --bind-addr 0.0.0.0:8443 /home/coder/project"
+    entrypoint: ["/bin/sh", "-c", "code-server --install-extension miragon-gmbh.miranum-json-forms || true; exec code-server --bind-addr 0.0.0.0:8443 /home/coder/project"]
 
   editor:
     build:
@@ -52,3 +52,6 @@ services:
 networks:
   default:
     name: dms_network
+
+volumes:
+  vscode_config:
