@@ -29,6 +29,7 @@ services:
 
   vscode:
     image: codercom/code-server:latest
+    user: "root"
     ports:
       - "8443:8443"
     volumes:
@@ -37,7 +38,8 @@ services:
       - vscode_config:/home/coder/.local/share/code-server
     environment:
       - AUTH=none
-    entrypoint: ["/bin/sh", "-c", "code-server --install-extension miragon-gmbh.miranum-json-forms || true; exec code-server --auth none --bind-addr 0.0.0.0:8443 /home/coder/project"]
+    entrypoint: ["/bin/sh", "-c", "chown -R coder:coder /home/coder && exec su coder -c 'code-server --install-extension miragon-gmbh.miranum-json-forms || true; exec code-server --auth none --bind-addr 0.0.0.0:8443 /home/coder/project'"]
+    command: []
 
   editor:
     build:
