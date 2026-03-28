@@ -55,6 +55,13 @@
                @update:modelValue="onFormChange"
              />
           </template>
+          <template v-else-if="doc.template_schema.properties[uielem.scope.split('/').pop()]?.readOnly">
+             <read-only-field
+               :label="uielem.label"
+               :modelValue="formData[uielem.scope.split('/').pop()]"
+               :type="doc.template_schema.properties[uielem.scope.split('/').pop()]?.type"
+             />
+          </template>
           <json-forms
             v-else
             :data="formData"
@@ -137,7 +144,20 @@ const fetchDoc = async () => {
       template_schema: templateRes.data.schema,
       template_uischema: templateRes.data.uischema
     }
-    formData.value = res.data.data
+
+    // Pre-populate defaults for new documents (empty data)
+    if (Object.keys(res.data.data).length === 0) {
+      const defaults = {}
+      const properties = templateRes.data.schema.properties || {}
+      Object.keys(properties).forEach(key => {
+        if (properties[key].default !== undefined) {
+          defaults[key] = properties[key].default
+        }
+      })
+      formData.value = defaults
+    } else {
+      formData.value = res.data.data
+    }
 
     setTimeout(() => {
       isInitializing.value = false

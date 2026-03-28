@@ -7,7 +7,7 @@
         <el-icon v-else color="#F56C6C" size="20"><Close /></el-icon>
       </template>
       <template v-else>
-        {{ modelValue || '—' }}
+        {{ (modelValue !== undefined && modelValue !== null && modelValue !== '') ? modelValue : '—' }}
       </template>
     </div>
   </div>
