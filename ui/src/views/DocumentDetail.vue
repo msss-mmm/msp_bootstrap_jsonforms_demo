@@ -1,6 +1,6 @@
 <template>
   <div class="document-detail">
-    <el-page-header @back="handleBack">
+    <el-page-header @back="handleBack" class="no-print">
       <template #content>
         <span class="text-large font-600 mr-3"> {{ doc?.title || 'Loading...' }} </span>
         <el-tag v-if="doc" type="info">{{ doc.template_name }}</el-tag>
@@ -22,14 +22,49 @@
       </template>
     </el-page-header>
 
+    <!-- Print Title -->
+    <div class="print-header print-only">
+      <h1>{{ doc?.title }}</h1>
+      <div class="subtitle">Template: {{ doc?.template_name }} | Status: {{ doc?.status }}</div>
+    </div>
+
     <div v-if="doc" class="form-container">
-      <form-create
-        v-model:api="fApi"
-        :rule="processedRule"
-        :option="processedOptions"
-        v-model="formData"
-        @change="onFormChange"
-      />
+      <div v-if="isLocked || isPrinting" class="readonly-mode">
+        <div v-for="(uielem, index) in doc.template_uischema.elements" :key="index">
+           <template v-if="uielem.options?.type === 'OperatorApprove' || uielem.options?.type === 'QAApprove'">
+             <approval-renderer
+               :role="uielem.options.type === 'QAApprove' ? 'QA' : 'Operator'"
+               :modelValue="formData[uielem.scope.split('/').pop()]"
+               disabled
+             />
+           </template>
+           <read-only-field
+             v-else
+             :label="uielem.label"
+             :modelValue="formData[uielem.scope.split('/').pop()]"
+             :type="doc.template_schema.properties[uielem.scope.split('/').pop()]?.type"
+           />
+        </div>
+      </div>
+      <div v-else>
+        <div v-for="(uielem, index) in doc.template_uischema.elements" :key="index" class="form-item-container">
+          <template v-if="uielem.options?.type === 'OperatorApprove' || uielem.options?.type === 'QAApprove'">
+             <approval-renderer
+               :role="uielem.options.type === 'QAApprove' ? 'QA' : 'Operator'"
+               v-model="formData[uielem.scope.split('/').pop()]"
+               @update:modelValue="onFormChange"
+             />
+          </template>
+          <json-forms
+            v-else
+            :data="formData"
+            :schema="getSubSchema(uielem)"
+            :uischema="uielem"
+            :renderers="renderers"
+            @change="onFormChange"
+          />
+        </div>
+      </div>
     </div>
     <div v-else class="loading-state">
       <el-skeleton :rows="5" animated />
@@ -38,29 +73,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import formCreate from '@form-create/element-ui'
+import { JsonForms } from '@jsonforms/vue'
+import { vanillaRenderers } from '@jsonforms/vue-vanilla'
+import ReadOnlyField from '../components/ReadOnlyField.vue'
+import ApprovalRenderer from '../components/ApprovalRenderer.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
-const fApi = ref({})
-// Debug helper for console
-watch(fApi, (newApi) => {
-  if (newApi && newApi.fields) {
-    window.fApi = newApi
-  }
-})
+
 const doc = ref(null)
 const formData = ref({})
 const hasChanges = ref(false)
 const isInitializing = ref(false)
-const processedRule = ref([])
-const processedOptions = ref({})
+const isPrinting = ref(false)
+
+const renderers = Object.freeze([...vanillaRenderers])
 
 const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
 
@@ -86,61 +119,11 @@ onBeforeRouteLeave((to, from, next) => {
   }
 })
 
-// Watch for changes that require re-processing the rule or options
-watch([doc, () => store.currentUser, isLocked], () => {
-  if (!doc.value) return
-
-  // 1. Process Options
-  const options = formCreate.parseJson(JSON.stringify(doc.value.template_options))
-  options.inject = true
-  options.submitBtn = false
-  options.resetBtn = false
-
-  if (isLocked.value) {
-    options.disabled = true
-    options.form = {
-      ...(options.form || {}),
-      disabled: true
-    }
-  }
-  processedOptions.value = options
-
-  // 2. Process Rule
-  const rule = formCreate.parseJson(JSON.stringify(doc.value.template_rule))
-  const processRuleInternal = (rules) => {
-    rules.forEach(r => {
-      // If QA, everything except QA approval is disabled
-      if (store.currentUser === 'QA' && !isLocked.value) {
-        if (r.type !== 'QAApprove') {
-          r.props = r.props || {}
-          r.props.disabled = true
-        }
-      }
-      // If Operator, QA approval is disabled
-      if (store.currentUser === 'Operator' && !isLocked.value) {
-        if (r.type === 'QAApprove') {
-          r.props = r.props || {}
-          r.props.disabled = true
-        }
-      }
-      if (r.children) processRuleInternal(r.children)
-      if (r.control) {
-        r.control.forEach(c => {
-          if (c.rule) processRuleInternal(c.rule)
-        })
-      }
-    })
-  }
-  processRuleInternal(rule)
-  processedRule.value = rule
-}, { immediate: true, deep: true })
-
 const fetchDoc = async () => {
   try {
     isInitializing.value = true
     const res = await axios.get(`${store.apiUrl}/documents/${route.params.id}/`)
 
-    // Redirect if archived as it should not be viewable
     if (res.data.status === 'Archived') {
       ElMessage.warning('Archived documents cannot be viewed')
       router.push('/')
@@ -151,13 +134,11 @@ const fetchDoc = async () => {
 
     doc.value = {
       ...res.data,
-      template_rule: templateRes.data.rule,
-      template_options: templateRes.data.options
+      template_schema: templateRes.data.schema,
+      template_uischema: templateRes.data.uischema
     }
     formData.value = res.data.data
 
-    await nextTick()
-    // Mark as done initializing after a slight delay
     setTimeout(() => {
       isInitializing.value = false
       hasChanges.value = false
@@ -166,6 +147,16 @@ const fetchDoc = async () => {
     console.error(error)
     ElMessage.error('Failed to load document')
     isInitializing.value = false
+  }
+}
+
+const getSubSchema = (uielem) => {
+  const fieldId = uielem.scope.split('/').pop()
+  return {
+    type: 'object',
+    properties: {
+      [fieldId]: doc.value.template_schema.properties[fieldId] || { type: 'string' }
+    }
   }
 }
 
@@ -190,11 +181,8 @@ const discardChanges = () => {
 const saveDocument = async (showMsg = true) => {
   if (isLocked.value) return
   try {
-    // Ensure all data is captured from FormCreate
-    const currentData = fApi.value.formData()
-
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: currentData
+      data: formData.value
     })
     if (showMsg) ElMessage.success('Document saved')
     hasChanges.value = false
@@ -207,9 +195,8 @@ const saveDocument = async (showMsg = true) => {
 const lockDocument = async () => {
   if (isLocked.value) return
   try {
-    const currentData = fApi.value.formData()
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: currentData,
+      data: formData.value,
       status: 'Locked'
     })
     ElMessage.success('Document locked')
@@ -225,11 +212,25 @@ const printDocument = () => {
   window.print()
 }
 
-const onFormChange = () => {
+const onFormChange = (event) => {
   if (!isInitializing.value) {
+    if (event && event.data) {
+        formData.value = event.data
+    }
     hasChanges.value = true
   }
 }
+
+// Media query for print monitoring
+const mediaQueryList = window.matchMedia('print')
+const handlePrintChange = (mql) => {
+  isPrinting.value = mql.matches
+}
+mediaQueryList.addListener(handlePrintChange)
+
+onBeforeUnmount(() => {
+  mediaQueryList.removeListener(handlePrintChange)
+})
 
 onMounted(fetchDoc)
 </script>
@@ -247,16 +248,39 @@ onMounted(fetchDoc)
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-.loading-state {
-  margin-top: 50px;
+.readonly-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-item-container {
+  margin-bottom: 20px;
+}
+
+.print-header {
+  display: none;
+  margin-bottom: 20px;
+}
+
+.print-header h1 {
+  margin: 0;
+  font-size: 24pt;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 12pt;
+  margin-top: 5pt;
 }
 
 @media print {
-  :deep(.el-page-header__back),
-  :deep(.el-page-header__extra),
-  :deep(.el-button),
   .no-print {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
   }
 
   .document-detail {
@@ -266,13 +290,7 @@ onMounted(fetchDoc)
   .form-container {
     margin-top: 0;
     box-shadow: none;
-    padding: 20px;
-  }
-
-  /* Ensure the title is prominent in print */
-  :deep(.el-page-header__content) {
-    font-size: 24px;
-    font-weight: bold;
+    padding: 0;
   }
 }
 </style>

@@ -23,7 +23,37 @@ services:
       - .env
     depends_on:
       - api
+    volumes:
+      - ./api/templates:/app/api/templates
+      - ./api/documents:/app/api/documents
+
+  vscode:
+    image: codercom/code-server:latest
+    user: "root"
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./api/templates:/home/coder/project/templates
+      - ./api/documents:/home/coder/project/documents
+      - vscode_config:/home/coder/.local/share/code-server
+    environment:
+      - AUTH=none
+    entrypoint: ["/bin/sh", "-c", "chown -R coder:coder /home/coder && exec su coder -c 'code-server --install-extension miragon-gmbh.miranum-json-forms || true; exec code-server --auth none --bind-addr 0.0.0.0:8443 /home/coder/project'"]
+    command: []
+
+  editor:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.editor
+    ports:
+      - "3000:80"
+    volumes:
+      - ./api/templates:/app/templates
+      - ./api/documents:/app/documents
 
 networks:
   default:
     name: dms_network
+
+volumes:
+  vscode_config:
