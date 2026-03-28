@@ -84,7 +84,7 @@ class ImportRegressionTest(TestCase):
 
     def test_import_template_update_on_collision(self):
         # Create template with same name but different description
-        Template.objects.create(name="Regression Test Template", description="Original", rule=[])
+        Template.objects.create(name="Regression Test Template", description="Original", schema={})
 
         call_command('import_templates')
 

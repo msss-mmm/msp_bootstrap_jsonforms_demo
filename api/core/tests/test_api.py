@@ -44,7 +44,7 @@ class ModelTests(TestCase):
     def setUp(self):
         self.template = Template.objects.create(
             name="Test Template",
-            rule={"rule": "test"},
+            schema={"type": "object"},
             status="Active"
         )
 
@@ -91,11 +91,15 @@ class APITests(TestCase):
         self.client = APIClient()
         self.template = Template.objects.create(
             name="Test Template",
-            rule=[
-                {"type": "OperatorApprove", "field": "op_1"},
-                {"type": "QAApprove", "field": "qa_1"},
-                {"type": "input", "field": "input_1"}
-            ],
+            schema={"type": "object"},
+            uischema={
+                "type": "VerticalLayout",
+                "elements": [
+                    {"type": "Control", "scope": "#/properties/op_1", "options": {"type": "OperatorApprove"}},
+                    {"type": "Control", "scope": "#/properties/qa_1", "options": {"type": "QAApprove"}},
+                    {"type": "Control", "scope": "#/properties/input_1"}
+                ]
+            },
             status="Active"
         )
         self.document = DocumentInstance.objects.create(
@@ -124,7 +128,7 @@ class APITests(TestCase):
         url = reverse('template-list')
         data = {
             "name": "New Template",
-            "rule": [{"rule": "new"}],
+            "schema": {"type": "object"},
             "status": "Active"
         }
         response = self.client.post(url, data, format='json')
@@ -146,7 +150,7 @@ class APITests(TestCase):
         url = reverse('template-list')
         data = {
             "name": "Test Template",
-            "rule": [{"rule": "new"}],
+            "schema": {"type": "object"},
             "status": "Active"
         }
         response = self.client.post(url, data, format='json')
@@ -184,11 +188,15 @@ class APITests(TestCase):
         # Complex template with multiple fields
         complex_template = Template.objects.create(
             name="Complex Template",
-            rule=[
-                {"type": "OperatorApprove", "field": "op_1"},
-                {"type": "OperatorApprove", "field": "op_2"},
-                {"type": "QAApprove", "field": "qa_1"}
-            ],
+            schema={"type": "object"},
+            uischema={
+                "type": "VerticalLayout",
+                "elements": [
+                    {"type": "Control", "scope": "#/properties/op_1", "options": {"type": "OperatorApprove"}},
+                    {"type": "Control", "scope": "#/properties/op_2", "options": {"type": "OperatorApprove"}},
+                    {"type": "Control", "scope": "#/properties/qa_1", "options": {"type": "QAApprove"}}
+                ]
+            },
             status="Active"
         )
         complex_doc = DocumentInstance.objects.create(
