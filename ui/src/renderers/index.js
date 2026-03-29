@@ -9,8 +9,8 @@ import TimeControlRenderer from './TimeControlRenderer.vue'
 export const elementRenderers = [
   ...vanillaRenderers,
   { tester: rankWith(3, isStringControl), renderer: StringControlRenderer },
-  { tester: rankWith(3, isNumberControl), renderer: NumberControlRenderer },
-  { tester: rankWith(3, isBooleanControl), renderer: BooleanControlRenderer },
-  { tester: rankWith(3, isDateControl), renderer: DateControlRenderer },
-  { tester: rankWith(3, isTimeControl), renderer: TimeControlRenderer }
+  { tester: rankWith(4, isNumberControl), renderer: NumberControlRenderer },
+  { tester: rankWith(4, isBooleanControl), renderer: BooleanControlRenderer },
+  { tester: rankWith(4, isDateControl), renderer: DateControlRenderer },
+  { tester: rankWith(4, isTimeControl), renderer: TimeControlRenderer }
 ]

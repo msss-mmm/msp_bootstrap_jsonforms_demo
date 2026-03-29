@@ -43,7 +43,7 @@
                  @click="selectElement(index)">
                <json-forms
                  :data="testData"
-                 :schema="getSubSchema(element)"
+                 :schema="schema"
                  :uischema="element"
                  :renderers="renderers"
                  @change="onFormChange"

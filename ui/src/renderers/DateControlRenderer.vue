@@ -6,12 +6,12 @@
     :errors="control.errors"
   >
     <el-date-picker
-      v-model="control.data"
+      :model-value="control.data"
       type="date"
       value-format="YYYY-MM-DD"
       :placeholder="control.uischema.options?.placeholder || 'Select date'"
       :disabled="!control.enabled"
-      @change="handleChange"
+      @update:model-value="handleChange"
       style="width: 100%"
     />
   </control-wrapper>

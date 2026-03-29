@@ -6,12 +6,12 @@
     :errors="control.errors"
   >
     <el-input
-      v-model="control.data"
+      :model-value="control.data"
       :placeholder="control.uischema.options?.placeholder"
       :disabled="!control.enabled"
       :type="control.uischema.options?.multi ? 'textarea' : 'text'"
       :rows="control.uischema.options?.rows || 3"
-      @change="handleChange"
+      @input="handleChange"
     />
   </control-wrapper>
 </template>
