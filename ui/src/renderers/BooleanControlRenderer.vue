@@ -6,8 +6,7 @@
     :errors="control.errors"
   >
     <el-checkbox
-      v-model="control.data"
-      :label="control.label"
+      :model-value="control.data"
       :disabled="!control.enabled"
       @change="handleChange"
     />

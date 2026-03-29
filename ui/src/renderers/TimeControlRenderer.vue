@@ -6,11 +6,11 @@
     :errors="control.errors"
   >
     <el-time-picker
-      v-model="control.data"
+      :model-value="control.data"
       value-format="HH:mm:ss"
       :placeholder="control.uischema.options?.placeholder || 'Select time'"
       :disabled="!control.enabled"
-      @change="handleChange"
+      @update:model-value="handleChange"
       style="width: 100%"
     />
   </control-wrapper>

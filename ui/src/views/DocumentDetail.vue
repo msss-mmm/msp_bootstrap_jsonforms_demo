@@ -65,7 +65,7 @@
           <json-forms
             v-else
             :data="formData"
-            :schema="getSubSchema(uielem)"
+            :schema="doc.template_schema"
             :uischema="uielem"
             :renderers="renderers"
             @change="onFormChange"
