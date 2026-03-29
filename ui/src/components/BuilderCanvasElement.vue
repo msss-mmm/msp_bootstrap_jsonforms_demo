@@ -3,12 +3,12 @@
        :class="{
          selected: isSelected,
          'is-dragging': isDraggingThis,
-         'is-layout': isLayout
+         'is-layout': isLayout,
+         'is-dragging-over': isDraggingOver && dropPosition === 'inside'
        }"
        :draggable="true"
        @dragstart.stop="onDragStart"
        @dragover.stop="onDragOver"
-       @drop.stop="onDrop"
        @dragend.stop="onDragEnd"
        @click.stop="onClick">
 
@@ -20,17 +20,17 @@
 
     <!-- Render Element -->
     <div class="element-content" :style="contentStyle">
-      <div v-if="isLayout" class="layout-container">
+      <div v-if="isLayout" class="layout-container" :style="layoutStyle">
         <!-- Empty Layout Placeholder -->
         <div v-if="!element.elements || element.elements.length === 0"
              class="empty-layout-placeholder">
-          <div class="placeholder-box"></div>
+          <div class="placeholder-box">Drag Component Here</div>
         </div>
 
         <!-- Recursive Children -->
         <template v-for="(child, index) in element.elements" :key="index">
            <!-- Ghost before -->
-           <div v-if="isDraggingOver && currentInsertIndex === index" class="drag-ghost">
+           <div v-if="isDraggingOverChild(index, 'top')" class="drag-ghost" :class="{ 'horizontal-ghost': element.type === 'HorizontalLayout' }">
               <el-icon><component :is="draggedItem?.icon || 'Edit'" /></el-icon>
            </div>
 
@@ -43,14 +43,18 @@
              :dragged-over-path="draggedOverPath"
              :drop-position="dropPosition"
              @select="$emit('select', $event)"
-             @move="$emit('move', $event)"
-             @add="$emit('add', $event)"
+             @move-start="$emit('move-start', $event)"
              @drag-over-update="$emit('drag-over-update', $event)"
            />
+
+           <!-- Ghost after -->
+           <div v-if="isDraggingOverChild(index, 'bottom')" class="drag-ghost" :class="{ 'horizontal-ghost': element.type === 'HorizontalLayout' }">
+              <el-icon><component :is="draggedItem?.icon || 'Edit'" /></el-icon>
+           </div>
         </template>
 
-        <!-- Ghost at end -->
-        <div v-if="isDraggingOver && element.elements && currentInsertIndex === element.elements.length" class="drag-ghost">
+        <!-- Ghost at end for inside drop -->
+        <div v-if="isDraggingOver && dropPosition === 'inside'" class="drag-ghost inside-ghost" :class="{ 'horizontal-ghost': element.type === 'HorizontalLayout' }">
            <el-icon><component :is="draggedItem?.icon || 'Edit'" /></el-icon>
         </div>
       </div>
@@ -84,7 +88,7 @@ const props = defineProps({
   testData: { type: Object, default: () => ({}) }
 })
 
-const emit = defineEmits(['select', 'move', 'add', 'drag-over-update'])
+const emit = defineEmits(['select', 'move-start', 'drag-over-update'])
 
 const renderers = Object.freeze([...elementRenderers])
 
@@ -97,11 +101,29 @@ const isDraggingThis = computed(() =>
   JSON.stringify(props.draggedItem.path) === JSON.stringify(props.path)
 )
 
-const currentInsertIndex = computed(() => {
-  if (!isDraggingOver.value) return -1
-  const index = props.draggedOverPath[props.draggedOverPath.length - 1] // This is actually the parent path if we are inside... wait.
-  // We need to know IF we are dragging over THIS element's children or the element itself.
-  return -1 // Logic moved to parent for simplicity or handled via events
+const isDraggingOverChild = (index, pos) => {
+  if (!props.draggedOverPath || props.dropPosition !== pos) return false
+  if (props.draggedOverPath.length !== props.path.length + 1) return false
+  for (let i = 0; i < props.path.length; i++) {
+    if (props.draggedOverPath[i] !== props.path[i]) return false
+  }
+  return props.draggedOverPath[props.path.length] === index
+}
+
+const layoutStyle = computed(() => {
+  if (props.element.type === 'HorizontalLayout') {
+    return {
+      display: 'flex',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: '10px',
+      alignItems: 'flex-start'
+    }
+  }
+  return {
+    display: 'flex',
+    flexDirection: 'column'
+  }
 })
 
 const contentStyle = computed(() => {
@@ -149,26 +171,33 @@ const onDragOver = (event) => {
   let targetPath = props.path
 
   if (isLayout.value) {
-     // If it's a layout, we can drop INSIDE or BETWEEN
-     // For simplicity, if we are in the middle 60% we drop inside at the end,
-     // top 20% is above, bottom 20% is below.
-     if (relativeY < rect.height * 0.2) {
-       position = 'top'
-     } else if (relativeY > rect.height * 0.8) {
-       position = 'bottom'
+     // For layouts, be more generous with 'inside' drop, especially when empty
+     const isEmpty = !props.element.elements || props.element.elements.length === 0
+
+     if (props.element.type === 'HorizontalLayout' && !isEmpty) {
+        const relativeX = event.clientX - rect.left
+        if (relativeX < rect.width * 0.15) {
+          position = 'top' // In Horizontal context, 'top'/'bottom' are used for before/after by parent but treated as prev/next sibling
+        } else if (relativeX > rect.width * 0.85) {
+          position = 'bottom'
+        } else {
+          position = 'inside'
+        }
      } else {
-       position = 'inside'
+        const threshold = isEmpty ? 0.1 : 0.2
+        if (relativeY < rect.height * threshold) {
+          position = 'top'
+        } else if (relativeY > rect.height * (1 - threshold)) {
+          position = 'bottom'
+        } else {
+          position = 'inside'
+        }
      }
   } else {
      position = relativeY < rect.height / 2 ? 'top' : 'bottom'
   }
 
   emit('drag-over-update', { path: targetPath, position })
-}
-
-const onDrop = (event) => {
-  event.preventDefault()
-  emit('add-to-path', { path: props.path, position: props.dropPosition })
 }
 
 const onDragEnd = () => {
@@ -205,7 +234,13 @@ const onClick = () => {
 .builder-canvas-element.is-layout {
   border: 1px dashed #c0c4cc;
   padding: 5px;
-  min-height: 50px;
+  min-height: 120px;
+  transition: all 0.2s;
+}
+
+.builder-canvas-element.is-layout.is-dragging-over {
+  border-color: #409eff;
+  background-color: rgba(64, 158, 255, 0.05);
 }
 
 .element-header {
@@ -227,14 +262,21 @@ const onClick = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 5px;
+  width: 100%;
 }
 
 .placeholder-box {
-  width: 100px;
+  width: 100%;
   height: 100px;
-  border: 2px dashed #dcdfe6;
-  border-radius: 8px;
+  border: 1px solid #dcdfe6;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #909399;
+  font-size: 12px;
 }
 
 .drag-ghost {
@@ -248,6 +290,22 @@ const onClick = () => {
   justify-content: center;
   color: #409eff;
   animation: ghost-pulse 1.5s infinite;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.drag-ghost.horizontal-ghost {
+  width: 30px;
+  height: 100px;
+  margin: 0 5px;
+}
+
+.inside-ghost {
+  margin: 10px 0;
+}
+
+.inside-ghost.horizontal-ghost {
+  margin: 0 10px;
 }
 
 @keyframes ghost-pulse {
