@@ -42,9 +42,11 @@
              :dragged-item="draggedItem"
              :dragged-over-path="draggedOverPath"
              :drop-position="dropPosition"
+             :test-data="testData"
              @select="$emit('select', $event)"
              @move-start="$emit('move-start', $event)"
              @drag-over-update="$emit('drag-over-update', $event)"
+             @canvas-change="$emit('canvas-change', $event)"
            />
 
            <!-- Ghost after -->
@@ -63,9 +65,10 @@
       <div v-else class="control-container">
          <json-forms
            :data="testData"
-           :schema="getSubSchema(element)"
+           :schema="schema"
            :uischema="element"
            :renderers="renderers"
+           @change="onChange"
          />
       </div>
     </div>
@@ -88,9 +91,13 @@ const props = defineProps({
   testData: { type: Object, default: () => ({}) }
 })
 
-const emit = defineEmits(['select', 'move-start', 'drag-over-update'])
+const emit = defineEmits(['select', 'move-start', 'drag-over-update', 'canvas-change'])
 
 const renderers = Object.freeze([...elementRenderers])
+
+const onChange = (payload) => {
+  emit('canvas-change', payload.data)
+}
 
 const isLayout = computed(() => ['VerticalLayout', 'HorizontalLayout', 'Group'].includes(props.element.type))
 const isSelected = computed(() => JSON.stringify(props.path) === JSON.stringify(props.selectedPath))
