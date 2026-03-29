@@ -56,6 +56,7 @@
              @select="selectedPath = $event"
              @drag-over-update="onDragOverUpdate"
              @move-start="onMoveStart"
+             @canvas-change="onCanvasChange"
            />
 
            <!-- Ghost after -->
@@ -172,6 +173,37 @@ const props = defineProps({
 const emit = defineEmits(['update:schema', 'update:uischema'])
 
 const testData = ref({})
+
+// Watch for changes in testData (from canvas) and update schema defaults
+watch(testData, (newData) => {
+  const newSchema = JSON.parse(JSON.stringify(props.schema))
+  let changed = false
+  for (const [id, val] of Object.entries(newData)) {
+    if (newSchema.properties[id] && newSchema.properties[id].default !== val) {
+      newSchema.properties[id].default = val
+      changed = true
+    }
+  }
+  if (changed) {
+    emit('update:schema', newSchema)
+  }
+}, { deep: true })
+
+// Watch for changes in schema (from properties panel) and update testData
+watch(() => props.schema, (newSchema) => {
+  for (const [id, prop] of Object.entries(newSchema.properties)) {
+    if (prop.default !== undefined && testData.value[id] !== prop.default) {
+      testData.value[id] = prop.default
+    } else if (prop.default === undefined && testData.value[id] !== undefined) {
+      delete testData.value[id]
+    }
+  }
+}, { deep: true, immediate: true })
+
+const onCanvasChange = (data) => {
+  testData.value = { ...data }
+}
+
 const selectedPath = ref(null) // Array of indices
 
 // Drag and drop state
@@ -405,8 +437,10 @@ const updateSchema = () => {
     if (currentProps.type === 'number') val = Number(val) || 0
     if (currentProps.type === 'boolean') val = !!val
     currentProps.default = val
+    testData.value[fieldId] = val
   } else {
     delete currentProps.default
+    delete testData.value[fieldId]
   }
 
   newSchema.properties[fieldId] = currentProps
