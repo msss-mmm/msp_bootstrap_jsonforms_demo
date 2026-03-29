@@ -6,7 +6,7 @@
     :errors="control.errors"
   >
     <el-input-number
-      v-model="control.data"
+      :model-value="control.data"
       :placeholder="control.uischema.options?.placeholder"
       :disabled="!control.enabled"
       :min="control.schema.minimum"
