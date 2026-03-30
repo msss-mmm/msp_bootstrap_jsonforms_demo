@@ -42,10 +42,12 @@
              :dragged-item="draggedItem"
              :dragged-over-path="draggedOverPath"
              :drop-position="dropPosition"
+             :test-data="testData"
              @select="$emit('select', $event)"
              @move="$emit('move', $event)"
              @add="$emit('add', $event)"
              @drag-over-update="$emit('drag-over-update', $event)"
+             @canvas-change="$emit('canvas-change', $event)"
            />
         </template>
 
@@ -56,12 +58,14 @@
       </div>
 
       <!-- Non-layout Control -->
-      <div v-else class="control-container">
+      <div v-else class="control-container" :data-field-id="fieldId">
          <json-forms
+           v-if="schema && schema.properties"
            :data="testData"
-           :schema="getSubSchema(element)"
+           :schema="controlSchema"
            :uischema="element"
            :renderers="renderers"
+           @change="handleCanvasChange"
          />
       </div>
     </div>
@@ -84,13 +88,47 @@ const props = defineProps({
   testData: { type: Object, default: () => ({}) }
 })
 
-const emit = defineEmits(['select', 'move', 'add', 'drag-over-update'])
+const emit = defineEmits(['select', 'move', 'add', 'drag-over-update', 'canvas-change'])
 
 const renderers = Object.freeze([...elementRenderers])
+
+const fieldId = computed(() => {
+  if (props.element.type === 'Control' && props.element.scope) {
+    return props.element.scope.split('/').pop()
+  }
+  return null
+})
+
+const handleCanvasChange = (payload) => {
+  if (props.element.type === 'Control' && props.element.scope) {
+    const id = props.element.scope.split('/').pop()
+    // Deep compare to prevent loops
+    const currentVal = props.testData[id]
+    const newVal = payload.data[id]
+    if (JSON.stringify(newVal) !== JSON.stringify(currentVal)) {
+      emit('canvas-change', { id, value: newVal })
+    }
+  }
+}
 
 const isLayout = computed(() => ['VerticalLayout', 'HorizontalLayout', 'Group'].includes(props.element.type))
 const isSelected = computed(() => JSON.stringify(props.path) === JSON.stringify(props.selectedPath))
 const isDraggingOver = computed(() => JSON.stringify(props.path) === JSON.stringify(props.draggedOverPath))
+
+const controlSchema = computed(() => {
+  if (props.element.type !== 'Control' || !props.element.scope || !props.schema?.properties) {
+    return props.schema
+  }
+  const id = props.element.scope.split('/').pop()
+  if (!props.schema.properties[id]) return props.schema
+
+  return {
+    type: 'object',
+    properties: {
+      [id]: props.schema.properties[id]
+    }
+  }
+})
 
 const isDraggingThis = computed(() =>
   props.draggedItem?.source === 'canvas' &&
@@ -99,9 +137,7 @@ const isDraggingThis = computed(() =>
 
 const currentInsertIndex = computed(() => {
   if (!isDraggingOver.value) return -1
-  const index = props.draggedOverPath[props.draggedOverPath.length - 1] // This is actually the parent path if we are inside... wait.
-  // We need to know IF we are dragging over THIS element's children or the element itself.
-  return -1 // Logic moved to parent for simplicity or handled via events
+  return -1
 })
 
 const contentStyle = computed(() => {
@@ -115,28 +151,15 @@ const contentStyle = computed(() => {
   }
 })
 
-const getSubSchema = (uielem) => {
-  if (!uielem.scope) return { type: 'object', properties: {} }
-  const fieldId = uielem.scope.split('/').pop()
-  return {
-    type: 'object',
-    properties: {
-      [fieldId]: props.schema?.properties?.[fieldId] || { type: 'string' }
-    }
-  }
-}
-
 const onDragStart = (event) => {
   emit('drag-over-update', { path: null, position: 'bottom' })
   event.dataTransfer.effectAllowed = 'move'
-  // Pass identifying info
   const dragInfo = {
     source: 'canvas',
     path: props.path,
     type: props.element.type,
     label: props.element.label
   }
-  // We use the parent's draggedItem ref mostly
   emit('move-start', dragInfo)
 }
 
@@ -149,9 +172,6 @@ const onDragOver = (event) => {
   let targetPath = props.path
 
   if (isLayout.value) {
-     // If it's a layout, we can drop INSIDE or BETWEEN
-     // For simplicity, if we are in the middle 60% we drop inside at the end,
-     // top 20% is above, bottom 20% is below.
      if (relativeY < rect.height * 0.2) {
        position = 'top'
      } else if (relativeY > rect.height * 0.8) {
@@ -178,7 +198,6 @@ const onDragEnd = () => {
 const onClick = () => {
   emit('select', props.path)
 }
-
 </script>
 
 <style scoped>

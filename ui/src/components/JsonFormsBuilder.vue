@@ -56,6 +56,7 @@
              @select="selectedPath = $event"
              @drag-over-update="onDragOverUpdate"
              @move-start="onMoveStart"
+             @canvas-change="onCanvasChange"
            />
 
            <!-- Ghost after -->
@@ -159,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import BuilderCanvasElement from './BuilderCanvasElement.vue'
 import BoxModelEditor from './BoxModelEditor.vue'
 import { Edit, Document, Check, Calendar, Timer, Delete, Connection, Menu, List } from '@element-plus/icons-vue'
@@ -172,6 +173,76 @@ const props = defineProps({
 const emit = defineEmits(['update:schema', 'update:uischema'])
 
 const testData = ref({})
+let isInternalUpdate = false
+
+// Watch for changes in schema (from properties panel or load) and update testData
+watch(() => props.schema, (newSchema) => {
+  if (!newSchema || !newSchema.properties) return
+
+  let testDataChanged = false
+  const newTestData = { ...testData.value }
+
+  for (const [id, prop] of Object.entries(newSchema.properties)) {
+    const currentDefault = prop.default
+    if (currentDefault !== undefined) {
+      // Use deep comparison to avoid infinite loops with object defaults
+      if (JSON.stringify(newTestData[id]) !== JSON.stringify(currentDefault)) {
+        newTestData[id] = JSON.parse(JSON.stringify(currentDefault))
+        testDataChanged = true
+      }
+    } else if (newTestData[id] !== undefined) {
+      delete newTestData[id]
+      testDataChanged = true
+    }
+  }
+
+  // Also remove keys that are no longer in schema properties at all
+  for (const id in newTestData) {
+    if (!newSchema.properties[id]) {
+      delete newTestData[id]
+      testDataChanged = true
+    }
+  }
+
+  if (testDataChanged) {
+    isInternalUpdate = true
+    testData.value = newTestData
+    // Flag must stay true until after any synchronous change events from JsonForms
+    nextTick(() => { isInternalUpdate = false })
+  }
+}, { deep: true, immediate: true })
+
+const onCanvasChange = ({ id, value }) => {
+  // If we are currently updating from the watcher, ignore this change event
+  if (isInternalUpdate) return
+
+  if (!props.schema || !props.schema.properties || !props.schema.properties[id]) return
+
+  const prop = props.schema.properties[id]
+
+  // Use deep comparison for the canvas change
+  if (JSON.stringify(value) !== JSON.stringify(prop.default)) {
+    // Update local testData immediately to keep UI responsive
+    if (value === undefined || value === null || value === '') {
+      delete testData.value[id]
+    } else {
+      testData.value[id] = JSON.parse(JSON.stringify(value))
+    }
+
+    const newSchema = JSON.parse(JSON.stringify(props.schema))
+    if (value === undefined || value === null || value === '') {
+      delete newSchema.properties[id].default
+    } else {
+      newSchema.properties[id].default = JSON.parse(JSON.stringify(value))
+    }
+
+    // Set flag to ignore the next prop update resulting from this emit
+    isInternalUpdate = true
+    emit('update:schema', newSchema)
+    nextTick(() => { isInternalUpdate = false })
+  }
+}
+
 const selectedPath = ref(null) // Array of indices
 
 // Drag and drop state
