@@ -476,8 +476,10 @@ const updateSchema = () => {
     if (currentProps.type === 'number') val = Number(val) || 0
     if (currentProps.type === 'boolean') val = !!val
     currentProps.default = val
+    testData.value[fieldId] = val
   } else {
     delete currentProps.default
+    delete testData.value[fieldId]
   }
 
   newSchema.properties[fieldId] = currentProps
