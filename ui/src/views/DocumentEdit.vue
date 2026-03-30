@@ -1,5 +1,5 @@
 <template>
-  <div class="document-detail">
+  <div class="document-edit">
     <el-page-header @back="handleBack" class="no-print">
       <template #content>
         <span class="text-large font-600 mr-3"> {{ doc?.title || 'Loading...' }} </span>
@@ -29,49 +29,14 @@
     </div>
 
     <div v-if="doc" class="form-container">
-      <div v-if="isLocked || isPrinting" class="readonly-mode">
-        <div v-for="(uielem, index) in doc.template_uischema.elements" :key="index">
-           <template v-if="uielem.options?.type === 'OperatorApprove' || uielem.options?.type === 'QAApprove'">
-             <approval-renderer
-               :role="uielem.options.type === 'QAApprove' ? 'QA' : 'Operator'"
-               :modelValue="formData[uielem.scope.split('/').pop()]"
-               disabled
-             />
-           </template>
-           <read-only-field
-             v-else
-             :label="uielem.label"
-             :modelValue="formData[uielem.scope.split('/').pop()]"
-             :type="doc.template_schema.properties[uielem.scope.split('/').pop()]?.type"
-           />
-        </div>
-      </div>
-      <div v-else>
-        <div v-for="(uielem, index) in doc.template_uischema.elements" :key="index" class="form-item-container">
-          <template v-if="uielem.options?.type === 'OperatorApprove' || uielem.options?.type === 'QAApprove'">
-             <approval-renderer
-               :role="uielem.options.type === 'QAApprove' ? 'QA' : 'Operator'"
-               v-model="formData[uielem.scope.split('/').pop()]"
-               @update:modelValue="onFormChange"
-             />
-          </template>
-          <template v-else-if="doc.template_schema.properties[uielem.scope.split('/').pop()]?.readOnly">
-             <read-only-field
-               :label="uielem.label"
-               :modelValue="formData[uielem.scope.split('/').pop()]"
-               :type="doc.template_schema.properties[uielem.scope.split('/').pop()]?.type"
-             />
-          </template>
-          <json-forms
-            v-else
-            :data="formData"
-            :schema="doc.template_schema"
-            :uischema="uielem"
-            :renderers="renderers"
-            @change="onFormChange"
-          />
-        </div>
-      </div>
+      <json-forms
+        :data="formData"
+        :schema="doc.template_schema || { type: 'object', properties: {} }"
+        :uischema="doc.template_uischema || { type: 'VerticalLayout', elements: [] }"
+        :renderers="activeRenderers"
+        :readonly="isLocked || isPrinting"
+        @change="onFormChange"
+      />
     </div>
     <div v-else class="loading-state">
       <el-skeleton :rows="5" animated />
@@ -86,9 +51,8 @@ import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { JsonForms } from '@jsonforms/vue'
-import { elementRenderers } from '../renderers'
-import ReadOnlyField from '../components/ReadOnlyField.vue'
-import ApprovalRenderer from '../components/ApprovalRenderer.vue'
+import { elementRenderers, readOnlyRenderers } from '../renderers'
+import isEqual from 'lodash/isEqual'
 
 const route = useRoute()
 const router = useRouter()
@@ -100,9 +64,31 @@ const hasChanges = ref(false)
 const isInitializing = ref(false)
 const isPrinting = ref(false)
 
-const renderers = Object.freeze([...elementRenderers])
-
 const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
+
+const STABLE_ELEMENT_RENDERERS = Object.freeze([...elementRenderers])
+const STABLE_READONLY_RENDERERS = Object.freeze([...readOnlyRenderers])
+
+const activeRenderers = computed(() => {
+  if (isLocked.value || isPrinting.value) {
+    return STABLE_READONLY_RENDERERS
+  }
+  return STABLE_ELEMENT_RENDERERS
+})
+
+const onFormChange = (event) => {
+  if (isInitializing.value) return
+  if (event && event.data) {
+    // Check if the data has actually changed before updating state
+    const currentData = JSON.stringify(formData.value)
+    const newData = JSON.stringify(event.data)
+
+    if (currentData !== newData) {
+        formData.value = event.data
+        hasChanges.value = true
+    }
+  }
+}
 
 onBeforeRouteLeave((to, from, next) => {
   if (hasChanges.value) {
@@ -139,14 +125,19 @@ const fetchDoc = async () => {
 
     const templateRes = await axios.get(`${store.apiUrl}/templates/${res.data.template}/`)
 
+    console.log('Document Data:', res.data)
+    console.log('Template Schema:', templateRes.data.schema)
+    console.log('Template UISchema:', templateRes.data.uischema)
+
     doc.value = {
       ...res.data,
-      template_schema: templateRes.data.schema,
-      template_uischema: templateRes.data.uischema
+      template_schema: templateRes.data.schema || { type: 'object', properties: {} },
+      template_uischema: templateRes.data.uischema || { type: 'VerticalLayout', elements: [] }
     }
 
     // Pre-populate defaults for new documents (empty data)
-    if (Object.keys(res.data.data).length === 0) {
+    const currentData = res.data.data || {}
+    if (Object.keys(currentData).length === 0) {
       const defaults = {}
       const properties = templateRes.data.schema.properties || {}
       Object.keys(properties).forEach(key => {
@@ -156,7 +147,7 @@ const fetchDoc = async () => {
       })
       formData.value = defaults
     } else {
-      formData.value = res.data.data
+      formData.value = currentData
     }
 
     setTimeout(() => {
@@ -167,16 +158,6 @@ const fetchDoc = async () => {
     console.error(error)
     ElMessage.error('Failed to load document')
     isInitializing.value = false
-  }
-}
-
-const getSubSchema = (uielem) => {
-  const fieldId = uielem.scope.split('/').pop()
-  return {
-    type: 'object',
-    properties: {
-      [fieldId]: doc.value.template_schema.properties[fieldId] || { type: 'string' }
-    }
   }
 }
 
@@ -232,14 +213,6 @@ const printDocument = () => {
   window.print()
 }
 
-const onFormChange = (event) => {
-  if (!isInitializing.value) {
-    if (event && event.data) {
-        formData.value = event.data
-    }
-    hasChanges.value = true
-  }
-}
 
 // Media query for print monitoring
 const mediaQueryList = window.matchMedia('print')
@@ -256,7 +229,7 @@ onMounted(fetchDoc)
 </script>
 
 <style scoped>
-.document-detail {
+.document-edit {
   padding: 20px;
 }
 
@@ -303,7 +276,7 @@ onMounted(fetchDoc)
     display: block !important;
   }
 
-  .document-detail {
+  .document-edit {
     padding: 0;
   }
 

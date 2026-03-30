@@ -11,7 +11,7 @@
       value-format="YYYY-MM-DD"
       :placeholder="control.uischema.options?.placeholder || 'Select date'"
       :disabled="!control.enabled"
-      @update:model-value="handleChange"
+      @update:model-value="val => handleChange(control.path, val)"
       style="width: 100%"
     />
   </control-wrapper>
@@ -25,11 +25,5 @@ const props = defineProps({
   ...rendererProps()
 })
 
-const { control, onChange } = useJsonFormsControl(props)
-
-const handleChange = (val) => {
-  if (typeof onChange === 'function') {
-    onChange(control.value.path, val)
-  }
-}
+const { control, handleChange } = useJsonFormsControl(props)
 </script>

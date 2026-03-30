@@ -12,7 +12,7 @@
       :min="control.schema.minimum"
       :max="control.schema.maximum"
       :step="control.schema.multipleOf || 1"
-      @change="handleChange"
+      @change="val => handleChange(control.path, val)"
       style="width: 100%"
     />
   </control-wrapper>
@@ -26,11 +26,5 @@ const props = defineProps({
   ...rendererProps()
 })
 
-const { control, onChange } = useJsonFormsControl(props)
-
-const handleChange = (val) => {
-  if (typeof onChange === 'function') {
-    onChange(control.value.path, val)
-  }
-}
+const { control, handleChange } = useJsonFormsControl(props)
 </script>

@@ -176,6 +176,7 @@ const onDragOver = (event) => {
   let targetPath = props.path
 
   if (isLayout.value) {
+     const isEmpty = !props.element.elements || props.element.elements.length === 0
      if (relativeY < rect.height * 0.2) {
        position = 'top'
      } else if (relativeY > rect.height * 0.8) {
