@@ -30,12 +30,14 @@
 
     <div v-if="doc" class="form-container">
       <json-forms
+        v-if="doc.template_schema && doc.template_uischema"
         :data="formData"
         :schema="doc.template_schema"
         :uischema="doc.template_uischema"
         :renderers="activeRenderers"
         :readonly="isLocked || isPrinting"
-        @change="onFormChange"
+        :validationMode="'noValidation'"
+        @change="handleFormChange"
       />
     </div>
     <div v-else class="loading-state">
@@ -45,32 +47,59 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { JsonForms } from '@jsonforms/vue'
 import { elementRenderers, readOnlyRenderers } from '../renderers'
+import isEqual from 'lodash/isEqual'
 
 const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
 
 const doc = ref(null)
-const formData = ref({})
+const formData = reactive({})
 const hasChanges = ref(false)
 const isInitializing = ref(false)
 const isPrinting = ref(false)
 
 const isLocked = computed(() => doc.value && doc.value.status !== 'Active')
 
+const STABLE_ELEMENT_RENDERERS = Object.freeze([...elementRenderers])
+const STABLE_READONLY_RENDERERS = Object.freeze([...readOnlyRenderers])
+
 const activeRenderers = computed(() => {
   if (isLocked.value || isPrinting.value) {
-    return Object.freeze([...readOnlyRenderers])
+    return STABLE_READONLY_RENDERERS
   }
-  return Object.freeze([...elementRenderers])
+  return STABLE_ELEMENT_RENDERERS
 })
+
+let isInternalUpdate = false
+const handleFormChange = (event) => {
+  if (isInitializing.value || isInternalUpdate) return
+  if (event.data) {
+    if (!isEqual(formData, event.data)) {
+      isInternalUpdate = true
+      // Surgical update of the reactive object to maintain focus and minimize re-renders
+      Object.keys(event.data).forEach(key => {
+        if (formData[key] !== event.data[key]) {
+          formData[key] = event.data[key]
+        }
+      })
+      Object.keys(formData).forEach(key => {
+        if (!(key in event.data)) {
+          delete formData[key]
+        }
+      })
+      hasChanges.value = true
+      nextTick(() => { isInternalUpdate = false })
+    }
+  }
+}
 
 onBeforeRouteLeave((to, from, next) => {
   if (hasChanges.value) {
@@ -113,18 +142,17 @@ const fetchDoc = async () => {
       template_uischema: templateRes.data.uischema
     }
 
-    // Pre-populate defaults for new documents (empty data)
+    // Clear and populate reactive formData
+    Object.keys(formData).forEach(key => delete formData[key])
     if (Object.keys(res.data.data).length === 0) {
-      const defaults = {}
       const properties = templateRes.data.schema.properties || {}
       Object.keys(properties).forEach(key => {
         if (properties[key].default !== undefined) {
-          defaults[key] = properties[key].default
+          formData[key] = properties[key].default
         }
       })
-      formData.value = defaults
     } else {
-      formData.value = res.data.data
+      Object.assign(formData, res.data.data)
     }
 
     setTimeout(() => {
@@ -160,7 +188,7 @@ const saveDocument = async (showMsg = true) => {
   if (isLocked.value) return
   try {
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: formData.value
+      data: formData
     })
     if (showMsg) ElMessage.success('Document saved')
     hasChanges.value = false
@@ -174,7 +202,7 @@ const lockDocument = async () => {
   if (isLocked.value) return
   try {
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: formData.value,
+      data: formData,
       status: 'Locked'
     })
     ElMessage.success('Document locked')
@@ -190,14 +218,6 @@ const printDocument = () => {
   window.print()
 }
 
-const onFormChange = (event) => {
-  if (!isInitializing.value) {
-    if (event && event.data) {
-        formData.value = event.data
-    }
-    hasChanges.value = true
-  }
-}
 
 // Media query for print monitoring
 const mediaQueryList = window.matchMedia('print')

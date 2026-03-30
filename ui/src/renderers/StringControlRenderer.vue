@@ -11,7 +11,7 @@
       :disabled="!control.enabled"
       :type="control.uischema.options?.multi ? 'textarea' : 'text'"
       :rows="control.uischema.options?.rows || 3"
-      @input="handleChange"
+      @update:model-value="handleChange"
     />
   </control-wrapper>
 </template>

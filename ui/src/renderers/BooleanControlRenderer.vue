@@ -8,7 +8,7 @@
     <el-checkbox
       :model-value="control.data"
       :disabled="!control.enabled"
-      @change="handleChange"
+      @update:model-value="handleChange"
     />
   </control-wrapper>
 </template>

@@ -12,7 +12,7 @@
       :min="control.schema.minimum"
       :max="control.schema.maximum"
       :step="control.schema.multipleOf || 1"
-      @change="handleChange"
+      @update:model-value="handleChange"
       style="width: 100%"
     />
   </control-wrapper>
