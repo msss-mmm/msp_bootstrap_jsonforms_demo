@@ -30,14 +30,12 @@
 
     <div v-if="doc" class="form-container">
       <json-forms
-        v-if="doc.template_schema && doc.template_uischema"
         :data="formData"
-        :schema="doc.template_schema"
-        :uischema="doc.template_uischema"
+        :schema="doc.template_schema || { type: 'object', properties: {} }"
+        :uischema="doc.template_uischema || { type: 'VerticalLayout', elements: [] }"
         :renderers="activeRenderers"
         :readonly="isLocked || isPrinting"
-        :validationMode="'noValidation'"
-        @change="handleFormChange"
+        @change="onFormChange"
       />
     </div>
     <div v-else class="loading-state">
@@ -47,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
@@ -61,7 +59,7 @@ const router = useRouter()
 const store = useAppStore()
 
 const doc = ref(null)
-const formData = reactive({})
+const formData = ref({})
 const hasChanges = ref(false)
 const isInitializing = ref(false)
 const isPrinting = ref(false)
@@ -78,25 +76,16 @@ const activeRenderers = computed(() => {
   return STABLE_ELEMENT_RENDERERS
 })
 
-let isInternalUpdate = false
-const handleFormChange = (event) => {
-  if (isInitializing.value || isInternalUpdate) return
-  if (event.data) {
-    if (!isEqual(formData, event.data)) {
-      isInternalUpdate = true
-      // Surgical update of the reactive object to maintain focus and minimize re-renders
-      Object.keys(event.data).forEach(key => {
-        if (formData[key] !== event.data[key]) {
-          formData[key] = event.data[key]
-        }
-      })
-      Object.keys(formData).forEach(key => {
-        if (!(key in event.data)) {
-          delete formData[key]
-        }
-      })
-      hasChanges.value = true
-      nextTick(() => { isInternalUpdate = false })
+const onFormChange = (event) => {
+  if (isInitializing.value) return
+  if (event && event.data) {
+    // Check if the data has actually changed before updating state
+    const currentData = JSON.stringify(formData.value)
+    const newData = JSON.stringify(event.data)
+
+    if (currentData !== newData) {
+        formData.value = event.data
+        hasChanges.value = true
     }
   }
 }
@@ -136,23 +125,29 @@ const fetchDoc = async () => {
 
     const templateRes = await axios.get(`${store.apiUrl}/templates/${res.data.template}/`)
 
+    console.log('Document Data:', res.data)
+    console.log('Template Schema:', templateRes.data.schema)
+    console.log('Template UISchema:', templateRes.data.uischema)
+
     doc.value = {
       ...res.data,
-      template_schema: templateRes.data.schema,
-      template_uischema: templateRes.data.uischema
+      template_schema: templateRes.data.schema || { type: 'object', properties: {} },
+      template_uischema: templateRes.data.uischema || { type: 'VerticalLayout', elements: [] }
     }
 
-    // Clear and populate reactive formData
-    Object.keys(formData).forEach(key => delete formData[key])
-    if (Object.keys(res.data.data).length === 0) {
+    // Pre-populate defaults for new documents (empty data)
+    const currentData = res.data.data || {}
+    if (Object.keys(currentData).length === 0) {
+      const defaults = {}
       const properties = templateRes.data.schema.properties || {}
       Object.keys(properties).forEach(key => {
         if (properties[key].default !== undefined) {
-          formData[key] = properties[key].default
+          defaults[key] = properties[key].default
         }
       })
+      formData.value = defaults
     } else {
-      Object.assign(formData, res.data.data)
+      formData.value = currentData
     }
 
     setTimeout(() => {
@@ -188,7 +183,7 @@ const saveDocument = async (showMsg = true) => {
   if (isLocked.value) return
   try {
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: formData
+      data: formData.value
     })
     if (showMsg) ElMessage.success('Document saved')
     hasChanges.value = false
@@ -202,7 +197,7 @@ const lockDocument = async () => {
   if (isLocked.value) return
   try {
     await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
-      data: formData,
+      data: formData.value,
       status: 'Locked'
     })
     ElMessage.success('Document locked')

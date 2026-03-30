@@ -11,7 +11,7 @@
       :disabled="!control.enabled"
       :type="control.uischema.options?.multi ? 'textarea' : 'text'"
       :rows="control.uischema.options?.rows || 3"
-      @update:model-value="handleChange"
+      @input="val => handleChange(control.path, val)"
     />
   </control-wrapper>
 </template>
@@ -24,11 +24,5 @@ const props = defineProps({
   ...rendererProps()
 })
 
-const { control, onChange } = useJsonFormsControl(props)
-
-const handleChange = (val) => {
-  if (typeof onChange === 'function') {
-    onChange(control.value.path, val)
-  }
-}
+const { control, handleChange } = useJsonFormsControl(props)
 </script>

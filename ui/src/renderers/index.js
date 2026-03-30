@@ -18,11 +18,11 @@ const isApprovalControl = (uischema) => {
 export const elementRenderers = [
   ...vanillaRenderers,
   { tester: rankWith(100, isApprovalControl), renderer: ApprovalControlRenderer },
-  { tester: rankWith(3, isStringControl), renderer: StringControlRenderer },
-  { tester: rankWith(3, isNumberControl), renderer: NumberControlRenderer },
-  { tester: rankWith(3, isBooleanControl), renderer: BooleanControlRenderer },
-  { tester: rankWith(3, isDateControl), renderer: DateControlRenderer },
-  { tester: rankWith(3, isTimeControl), renderer: TimeControlRenderer },
+   { tester: rankWith(10, isStringControl), renderer: StringControlRenderer },
+   { tester: rankWith(10, isNumberControl), renderer: NumberControlRenderer },
+   { tester: rankWith(10, isBooleanControl), renderer: BooleanControlRenderer },
+   { tester: rankWith(10, isDateControl), renderer: DateControlRenderer },
+   { tester: rankWith(10, isTimeControl), renderer: TimeControlRenderer },
   { tester: rankWith(10, uiTypeIs('VerticalLayout')), renderer: VerticalLayoutRenderer },
   { tester: rankWith(10, uiTypeIs('HorizontalLayout')), renderer: HorizontalLayoutRenderer },
   { tester: rankWith(10, isGroup), renderer: GroupLayoutRenderer }

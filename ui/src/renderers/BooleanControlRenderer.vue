@@ -8,7 +8,7 @@
     <el-checkbox
       :model-value="control.data"
       :disabled="!control.enabled"
-      @update:model-value="handleChange"
+      @update:model-value="val => handleChange(control.path, val)"
     />
   </control-wrapper>
 </template>
@@ -21,11 +21,5 @@ const props = defineProps({
   ...rendererProps()
 })
 
-const { control, onChange } = useJsonFormsControl(props)
-
-const handleChange = (val) => {
-  if (typeof onChange === 'function') {
-    onChange(control.value.path, val)
-  }
-}
+const { control, handleChange } = useJsonFormsControl(props)
 </script>
