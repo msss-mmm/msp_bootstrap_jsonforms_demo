@@ -160,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import BuilderCanvasElement from './BuilderCanvasElement.vue'
 import BoxModelEditor from './BoxModelEditor.vue'
 import { Edit, Document, Check, Calendar, Timer, Delete, Connection, Menu, List } from '@element-plus/icons-vue'
@@ -173,35 +173,74 @@ const props = defineProps({
 const emit = defineEmits(['update:schema', 'update:uischema'])
 
 const testData = ref({})
+let isInternalUpdate = false
 
-// Watch for changes in testData (from canvas) and update schema defaults
-watch(testData, (newData) => {
-  const newSchema = JSON.parse(JSON.stringify(props.schema))
-  let changed = false
-  for (const [id, val] of Object.entries(newData)) {
-    if (newSchema.properties[id] && newSchema.properties[id].default !== val) {
-      newSchema.properties[id].default = val
-      changed = true
-    }
-  }
-  if (changed) {
-    emit('update:schema', newSchema)
-  }
-}, { deep: true })
-
-// Watch for changes in schema (from properties panel) and update testData
+// Watch for changes in schema (from properties panel or load) and update testData
 watch(() => props.schema, (newSchema) => {
+  if (!newSchema || !newSchema.properties) return
+
+  let testDataChanged = false
+  const newTestData = { ...testData.value }
+
   for (const [id, prop] of Object.entries(newSchema.properties)) {
-    if (prop.default !== undefined && testData.value[id] !== prop.default) {
-      testData.value[id] = prop.default
-    } else if (prop.default === undefined && testData.value[id] !== undefined) {
-      delete testData.value[id]
+    const currentDefault = prop.default
+    if (currentDefault !== undefined) {
+      // Use deep comparison to avoid infinite loops with object defaults
+      if (JSON.stringify(newTestData[id]) !== JSON.stringify(currentDefault)) {
+        newTestData[id] = JSON.parse(JSON.stringify(currentDefault))
+        testDataChanged = true
+      }
+    } else if (newTestData[id] !== undefined) {
+      delete newTestData[id]
+      testDataChanged = true
     }
+  }
+
+  // Also remove keys that are no longer in schema properties at all
+  for (const id in newTestData) {
+    if (!newSchema.properties[id]) {
+      delete newTestData[id]
+      testDataChanged = true
+    }
+  }
+
+  if (testDataChanged) {
+    isInternalUpdate = true
+    testData.value = newTestData
+    // Flag must stay true until after any synchronous change events from JsonForms
+    nextTick(() => { isInternalUpdate = false })
   }
 }, { deep: true, immediate: true })
 
-const onCanvasChange = (data) => {
-  testData.value = { ...data }
+const onCanvasChange = ({ id, value }) => {
+  // If we are currently updating from the watcher, ignore this change event
+  if (isInternalUpdate) return
+
+  if (!props.schema || !props.schema.properties || !props.schema.properties[id]) return
+
+  const prop = props.schema.properties[id]
+
+  // Use deep comparison for the canvas change
+  if (JSON.stringify(value) !== JSON.stringify(prop.default)) {
+    // Update local testData immediately to keep UI responsive
+    if (value === undefined || value === null || value === '') {
+      delete testData.value[id]
+    } else {
+      testData.value[id] = JSON.parse(JSON.stringify(value))
+    }
+
+    const newSchema = JSON.parse(JSON.stringify(props.schema))
+    if (value === undefined || value === null || value === '') {
+      delete newSchema.properties[id].default
+    } else {
+      newSchema.properties[id].default = JSON.parse(JSON.stringify(value))
+    }
+
+    // Set flag to ignore the next prop update resulting from this emit
+    isInternalUpdate = true
+    emit('update:schema', newSchema)
+    nextTick(() => { isInternalUpdate = false })
+  }
 }
 
 const selectedPath = ref(null) // Array of indices

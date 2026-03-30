@@ -28,6 +28,8 @@ const props = defineProps({
 const { control, onChange } = useJsonFormsControl(props)
 
 const handleChange = (val) => {
-  onChange(control.value.path, val)
+  if (typeof onChange === 'function') {
+    onChange(control.value.path, val)
+  }
 }
 </script>
