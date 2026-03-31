@@ -302,9 +302,11 @@ const selectedItem = computed(() => {
   const fieldId = isControl && uielem.scope ? uielem.scope.split('/').pop() : ''
   const schelem = isControl ? (props.schema?.properties?.[fieldId] || {}) : {}
 
-  if (!uielem.options) uielem.options = {}
-  if (!uielem.options.margin) uielem.options.margin = { top: '0px', right: '0px', bottom: '0px', left: '0px' }
-  if (!uielem.options.padding) uielem.options.padding = { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+  const options = {
+    margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+    padding: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+    ...(uielem.options || {})
+  }
 
   return {
     isControl,
@@ -316,7 +318,7 @@ const selectedItem = computed(() => {
     default: schelem.default,
     hasDefault: schelem.default !== undefined,
     readOnly: schelem.readOnly || false,
-    options: uielem.options
+    options
   }
 })
 
@@ -351,10 +353,10 @@ const onCanvasDrop = (event) => {
   const newUiSchema = JSON.parse(JSON.stringify(props.uischema))
   const newSchema = JSON.parse(JSON.stringify(props.schema))
 
-  let newElement
+  let elementToInsert
   if (item.source === 'palette') {
     if (['VerticalLayout', 'HorizontalLayout', 'Group'].includes(item.type)) {
-      newElement = {
+      elementToInsert = {
         type: item.type,
         label: item.label,
         elements: [],
@@ -374,7 +376,7 @@ const onCanvasDrop = (event) => {
       if (item.type === 'object' && item.options) {
         newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
       }
-      newElement = {
+      elementToInsert = {
         type: 'Control',
         scope: `#/properties/${id}`,
         label: item.label,
@@ -382,22 +384,57 @@ const onCanvasDrop = (event) => {
       }
     }
   } else {
-    // Canvas move
-    const getParent = (tree, path) => {
+    // Canvas move: Get the element from the original path
+    const getElementAndRemove = (tree, path) => {
       let curr = tree
       for (let i = 0; i < path.length - 1; i++) {
         curr = curr.elements[path[i]]
       }
-      return curr
+      const index = path[path.length - 1]
+      const removed = curr.elements.splice(index, 1)[0]
+      return removed
     }
-    const oldParent = getParent(newUiSchema, item.path)
-    const oldIndex = item.path[item.path.length - 1]
-    newElement = oldParent.elements.splice(oldIndex, 1)[0]
+    // IMPORTANT: If we move an element within the same parent to a later position,
+    // the indices of the target will change after the removal.
+    // However, since we work on a deep copy 'newUiSchema', and 'item.path' refers to the OLD state,
+    // we need to be careful if the removal affects the drop path.
+
+    // Safety check: is the drop path a descendant of the dragged path?
+    const isDescendant = (parentPath, childPath) => {
+      if (childPath.length <= parentPath.length) return false
+      for (let i = 0; i < parentPath.length; i++) {
+        if (parentPath[i] !== childPath[i]) return false
+      }
+      return true
+    }
+
+    if (draggedOverPath.value && isDescendant(item.path, draggedOverPath.value)) {
+      isDragging.value = false
+      draggedItem.value = null
+      draggedOverPath.value = null
+      return
+    }
+
+    elementToInsert = getElementAndRemove(newUiSchema, item.path)
+
+    // Adjust target path if removal shifted indices in the same parent
+    if (draggedOverPath.value) {
+      const sameParent = item.path.length === draggedOverPath.value.length &&
+                         item.path.slice(0, -1).every((v, i) => v === draggedOverPath.value[i])
+
+      if (sameParent) {
+        const oldIndex = item.path[item.path.length - 1]
+        const targetIndex = draggedOverPath.value[draggedOverPath.value.length - 1]
+        if (oldIndex < targetIndex) {
+          draggedOverPath.value[draggedOverPath.value.length - 1]--
+        }
+      }
+    }
   }
 
-  // Find where to insert
+  // Find where to insert in the potentially modified newUiSchema
   if (!draggedOverPath.value) {
-    newUiSchema.elements.push(newElement)
+    newUiSchema.elements.push(elementToInsert)
     selectedPath.value = [newUiSchema.elements.length - 1]
   } else {
     const path = draggedOverPath.value
@@ -410,11 +447,11 @@ const onCanvasDrop = (event) => {
     if (dropPosition.value === 'inside') {
       const target = parent.elements[index]
       if (!target.elements) target.elements = []
-      target.elements.push(newElement)
+      target.elements.push(elementToInsert)
       selectedPath.value = [...path, target.elements.length - 1]
     } else {
       const insertIndex = dropPosition.value === 'bottom' ? index + 1 : index
-      parent.elements.splice(insertIndex, 0, newElement)
+      parent.elements.splice(insertIndex, 0, elementToInsert)
       selectedPath.value = [...path.slice(0, -1), insertIndex]
     }
   }
