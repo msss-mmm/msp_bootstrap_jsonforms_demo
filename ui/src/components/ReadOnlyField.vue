@@ -1,22 +1,27 @@
 <template>
-  <div :class="['read-only-field', { 'no-value': !modelValue && modelValue !== 0 }]">
+  <div :class="['read-only-field', { 'no-value': isEmpty }]">
     <div class="field-label">{{ label }}</div>
     <div class="field-value">
       <template v-if="type === 'boolean'">
-        <el-icon v-if="modelValue" color="#67C23A" size="20"><Check /></el-icon>
-        <el-icon v-else color="#F56C6C" size="20"><Close /></el-icon>
+        <div class="boolean-display">
+          <div :class="['checkbox-mock', modelValue ? 'is-checked' : 'is-unchecked']">
+            <el-icon v-if="modelValue" size="14"><Check /></el-icon>
+            <el-icon v-else size="14"><Close /></el-icon>
+          </div>
+        </div>
       </template>
       <template v-else>
-        {{ (modelValue !== undefined && modelValue !== null && modelValue !== '') ? modelValue : '—' }}
+        {{ formattedValue }}
       </template>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Check, Close } from '@element-plus/icons-vue'
 
-defineProps({
+const props = defineProps({
   modelValue: [String, Number, Boolean],
   label: String,
   type: {
@@ -24,46 +29,82 @@ defineProps({
     default: 'string'
   }
 })
+
+const isEmpty = computed(() => {
+  return props.modelValue === undefined || props.modelValue === null || props.modelValue === ''
+})
+
+const formattedValue = computed(() => {
+  if (isEmpty.value) {
+    return '—'
+  }
+  return props.modelValue
+})
 </script>
 
 <style scoped>
 .read-only-field {
-  margin-bottom: 20px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f2f5;
+  margin-bottom: 22px;
 }
 
 .field-label {
-  font-size: 0.9rem;
+  font-size: 14px;
   color: #606266;
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .field-value {
-  font-size: 1.15rem;
-  color: #000;
+  font-size: 14px;
+  color: #606266;
   font-weight: 700;
-  min-height: 1.4em;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
 }
 
-.no-value .field-value {
-  color: #c0c4cc;
-  font-weight: normal;
+.boolean-display {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-mock {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox-mock.is-checked {
+  background-color: #409eff;
+  color: #fff;
+  border: 2px solid #409eff;
+}
+
+.checkbox-mock.is-unchecked {
+  background-color: #fff;
+  border: 2px solid #dcdfe6;
+  color: #dcdfe6;
 }
 
 @media print {
-  .read-only-field {
-    border-bottom: 2px solid #000;
-    page-break-inside: avoid;
-  }
-  .field-label {
+  .field-label, .field-value {
     color: #000;
-    font-weight: 600;
   }
-  .field-value {
+  .checkbox-mock.is-checked {
+    background-color: #000 !important;
+    border-color: #000 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+  }
+  .checkbox-mock.is-unchecked {
+    border-color: #000 !important;
     color: #000 !important;
-    font-weight: 800 !important;
+    background-color: #fff !important;
+    -webkit-print-color-adjust: exact;
   }
 }
 </style>

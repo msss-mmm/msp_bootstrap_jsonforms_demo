@@ -28,13 +28,13 @@
       <div class="subtitle">Template: {{ doc?.template_name }} | Status: {{ doc?.status }}</div>
     </div>
 
-    <div v-if="doc" class="form-container">
+    <div v-if="doc" class="form-container" :inert="isLocked && !isPrinting">
       <json-forms
         :data="formData"
         :schema="doc.template_schema || { type: 'object', properties: {} }"
         :uischema="doc.template_uischema || { type: 'VerticalLayout', elements: [] }"
         :renderers="activeRenderers"
-        :readonly="isLocked || isPrinting"
+        :readonly="isPrinting"
         @change="onFormChange"
       />
     </div>
@@ -70,7 +70,7 @@ const STABLE_ELEMENT_RENDERERS = Object.freeze([...elementRenderers])
 const STABLE_READONLY_RENDERERS = Object.freeze([...readOnlyRenderers])
 
 const activeRenderers = computed(() => {
-  if (isLocked.value || isPrinting.value) {
+  if (isPrinting.value) {
     return STABLE_READONLY_RENDERERS
   }
   return STABLE_ELEMENT_RENDERERS
