@@ -1,6 +1,6 @@
 # DMS Document Pipeline
 
-A modern, dynamic Document Management System (DMS) to transition legacy "paper and binder" workflows into a secure, digital environment. This system uses a schema-driven approach for document templates and instances, powered by **FormCreate** and **Element Plus**.
+A modern, dynamic Document Management System (DMS) to transition legacy "paper and binder" workflows into a secure, digital environment. This system uses a schema-driven approach for document templates and instances, powered by **JSON Forms** and **Element Plus**.
 
 ## Overview
 
@@ -9,7 +9,7 @@ The application allows administrators to design complex manufacturing forms (Tra
 ## Tech Stack
 
 - **Backend:** Python 3.13+, Django 6.0+, Django REST Framework
-- **Frontend:** Vue 3 (Composition API), Element Plus UI Framework, FormCreate
+- **Frontend:** Vue 3 (Composition API), Element Plus UI Framework, JSON Forms
 - **Database:** SQLite (default)
 - **Deployment:** Docker & Docker Compose
 

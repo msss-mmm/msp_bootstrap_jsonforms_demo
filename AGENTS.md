@@ -8,7 +8,7 @@ The system is designed to be technology-agnostic where possible, but the followi
 - **Backend:** Django (Python) with REST API support.
 - **Frontend:** Vue 3 (Composition API) for a responsive single-page application.
 - **UI Framework:** Element Plus for consistent interface components.
-- **Dynamic Form Engine:** FormCreate & FormCreate Designer for visual template authoring and runtime rendering.
+- **Dynamic Form Engine:** JSON Forms with a custom drag-and-drop builder for visual template authoring and runtime rendering.
 
 ## Document and Template Lifecycle
 The system manages the lifecycle of form definitions (**Templates**) and their specific completions (**Document Instances**).
@@ -29,8 +29,8 @@ The system manages the lifecycle of form definitions (**Templates**) and their s
 - **State-Based UI:** The user interface dynamically adjusts based on the status of the entity (e.g., disabling form fields or hiding action buttons for locked documents) and the current user's privileges.
 
 ## Document Editor
-- **Low-Code Designer:** A visual, drag-and-drop interface allows for the creation of complex document templates without writing code.
-- **JSON Schema:** All template definitions and form options are stored as structured JSON, enabling flexible data models and runtime form generation.
+- **Low-Code Designer:** A visual, drag-and-drop interface allows for the creation of complex document templates using JSON Schema and UI Schema.
+- **JSON Schema & UI Schema:** Template definitions follow the JSON Forms standard, with a data schema for structure and a UI schema for layout, enabling flexible data models and runtime form generation.
 - **Storage Synchronization:** To ensure portability and ease of initialization, template definitions are synchronized between the primary database and a local filesystem directory (e.g., as `.json` files).
 
 ## Network & Security Constraints
