@@ -52,6 +52,14 @@ html, body, #app {
 
 .app-container {
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.el-main {
+  flex-grow: 1;
+  overflow: hidden;
+  padding: 20px;
 }
 
 .header {
