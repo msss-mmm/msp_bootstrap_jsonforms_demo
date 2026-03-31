@@ -4,6 +4,7 @@
       :model-value="control.data"
       :role="role"
       :disabled="!control.enabled"
+      :plain-text="!control.enabled"
       @update:model-value="handleChange"
     />
     <div v-if="control.errors" class="error-text">{{ control.errors }}</div>

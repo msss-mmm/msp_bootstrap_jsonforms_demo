@@ -1,5 +1,6 @@
 <template>
   <control-wrapper
+    v-if="control.enabled"
     :label="control.label"
     :description="control.description"
     :required="control.required"
@@ -16,11 +17,18 @@
       style="width: 100%"
     />
   </control-wrapper>
+  <read-only-field
+    v-else
+    :label="control.label"
+    :model-value="control.data"
+    type="number"
+  />
 </template>
 
 <script setup>
 import { rendererProps, useJsonFormsControl } from '@jsonforms/vue'
 import ControlWrapper from './ControlWrapper.vue'
+import ReadOnlyField from '../components/ReadOnlyField.vue'
 
 const props = defineProps({
   ...rendererProps()
