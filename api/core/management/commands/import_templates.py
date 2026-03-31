@@ -20,7 +20,6 @@ class Command(BaseCommand):
                     with open(filepath, 'r') as f:
                         data = json.load(f)
 
-                    # Ensure compatibility with FormCreate structure
                     name = data.get('name')
                     if not name:
                         continue
@@ -32,9 +31,6 @@ class Command(BaseCommand):
                         is_active = data.get('is_active', True)
                         status = 'Active' if is_active else 'Inactive'
                     description = data.get('description', '')
-
-                    # Simple check if it's already a FormCreate rule
-                    # If it's a legacy template, it might need conversion later
 
                     template, created = Template.objects.update_or_create(
                         name=name,
