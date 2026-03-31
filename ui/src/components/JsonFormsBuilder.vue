@@ -569,6 +569,7 @@ const clearForm = () => {
   height: 100%;
   background: #f5f7fa;
   gap: 10px;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -578,6 +579,7 @@ const clearForm = () => {
   padding: 15px;
   overflow-y: auto;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  flex-shrink: 0;
 }
 
 .palette-group h4 {
@@ -610,11 +612,11 @@ const clearForm = () => {
 .canvas {
   flex-grow: 1;
   padding: 20px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   background: #fff;
   border: 1px solid #dcdfe6;
+  overflow: hidden;
 }
 
 .canvas-header {
@@ -624,6 +626,7 @@ const clearForm = () => {
   margin-bottom: 15px;
   border-bottom: 1px solid #eee;
   padding-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .breadcrumbs {
@@ -632,7 +635,8 @@ const clearForm = () => {
 
 .canvas-content {
   padding: 15px;
-  min-height: 600px;
+  flex-grow: 1;
+  overflow-y: auto;
   border: 2px dashed #ebeef5;
   border-radius: 8px;
   background: #fafafa;

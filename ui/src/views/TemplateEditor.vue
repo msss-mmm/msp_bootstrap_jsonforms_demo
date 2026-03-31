@@ -255,9 +255,10 @@ onMounted(async () => {
 
 <style scoped>
 .template-editor {
-  height: calc(100vh - 120px);
+  height: 100%;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
   padding: 20px;
 }
 
@@ -271,6 +272,7 @@ onMounted(async () => {
   flex-grow: 1;
   margin-top: 20px;
   border: 1px solid #dcdfe6;
+  overflow: hidden;
 }
 
 .error-text {
