@@ -43,6 +43,7 @@
              :dragged-over-path="draggedOverPath"
              :drop-position="dropPosition"
              :test-data="testData"
+             :parent-type="element.type"
              @select="$emit('select', $event)"
              @move-start="$emit('move-start', $event)"
              @drag-over-update="$emit('drag-over-update', $event)"
@@ -89,7 +90,8 @@ const props = defineProps({
   draggedItem: Object,
   draggedOverPath: Array,
   dropPosition: String,
-  testData: { type: Object, default: () => ({}) }
+  testData: { type: Object, default: () => ({}) },
+  parentType: String
 })
 
 const emit = defineEmits(['select', 'move', 'add', 'drag-over-update', 'canvas-change'])
@@ -139,6 +141,24 @@ const isDraggingThis = computed(() =>
   JSON.stringify(props.draggedItem.path) === JSON.stringify(props.path)
 )
 
+const isDraggingOverChild = (index, position) => {
+  if (!props.draggedOverPath) return false
+  const childPath = JSON.stringify([...props.path, index])
+  return childPath === JSON.stringify(props.draggedOverPath) && props.dropPosition === position
+}
+
+const layoutStyle = computed(() => {
+  if (props.element.type === 'HorizontalLayout') {
+    return {
+      display: 'flex',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: '10px'
+    }
+  }
+  return {}
+})
+
 const currentInsertIndex = computed(() => {
   if (!isDraggingOver.value) return -1
   return -1
@@ -171,28 +191,36 @@ const onDragOver = (event) => {
   event.preventDefault()
   const rect = event.currentTarget.getBoundingClientRect()
   const relativeY = event.clientY - rect.top
+  const relativeX = event.clientX - rect.left
 
   let position = 'bottom'
   let targetPath = props.path
 
   if (isLayout.value) {
      const isEmpty = !props.element.elements || props.element.elements.length === 0
-     if (relativeY < rect.height * 0.2) {
-       position = 'top'
-     } else if (relativeY > rect.height * 0.8) {
-       position = 'bottom'
-     } else {
-        const threshold = isEmpty ? 0.1 : 0.2
-        if (relativeY < rect.height * threshold) {
+     if (props.element.type === 'HorizontalLayout') {
+        if (relativeX < rect.width * 0.2) {
           position = 'top'
-        } else if (relativeY > rect.height * (1 - threshold)) {
+        } else if (relativeX > rect.width * 0.8) {
+          position = 'bottom'
+        } else {
+          position = 'inside'
+        }
+     } else {
+        if (relativeY < rect.height * 0.2) {
+          position = 'top'
+        } else if (relativeY > rect.height * 0.8) {
           position = 'bottom'
         } else {
           position = 'inside'
         }
      }
   } else {
-     position = relativeY < rect.height / 2 ? 'top' : 'bottom'
+     if (props.parentType === 'HorizontalLayout') {
+       position = relativeX < rect.width / 2 ? 'top' : 'bottom'
+     } else {
+       position = relativeY < rect.height / 2 ? 'top' : 'bottom'
+     }
   }
 
   emit('drag-over-update', { path: targetPath, position })
