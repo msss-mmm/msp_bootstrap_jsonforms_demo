@@ -12,6 +12,9 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install Playwright system dependencies and Chromium
+RUN playwright install --with-deps chromium
+
 # Copy project
 COPY . /app/
 
