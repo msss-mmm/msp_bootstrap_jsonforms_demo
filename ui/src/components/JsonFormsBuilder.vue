@@ -101,8 +101,8 @@
                 <el-input v-if="selectedItem.type === 'string' && !selectedItem.format" v-model="selectedItem.default" @input="updateSchema" />
                 <el-input-number v-else-if="selectedItem.type === 'number'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" />
                 <el-checkbox v-else-if="selectedItem.type === 'boolean'" v-model="selectedItem.default" @change="updateSchema">Active</el-checkbox>
-                <el-date-picker v-else-if="selectedItem.format === 'date'" v-model="selectedItem.default" type="date" value-format="YYYY-MM-DD" :editable="false" @change="updateSchema" style="width: 100%" />
-                <el-time-picker v-else-if="selectedItem.format === 'time'" v-model="selectedItem.default" value-format="HH:mm:ss" :editable="false" @change="updateSchema" style="width: 100%" />
+                <el-date-picker v-else-if="selectedItem.format === 'date'" v-model="selectedItem.default" type="date" value-format="YYYY-MM-DD" placeholder="YYYY:MM:DD" @change="updateSchema" style="width: 100%" />
+                <el-time-picker v-else-if="selectedItem.format === 'time'" v-model="selectedItem.default" value-format="HH:mm:ss" placeholder="HH:MM:SS" @change="updateSchema" style="width: 100%" />
                 <el-input v-else v-model="selectedItem.default" @input="updateSchema" />
               </template>
               <div v-else style="color: #909399; font-size: 12px; font-style: italic;">No value specified</div>
@@ -693,4 +693,5 @@ h3 {
   font-size: 1.1rem;
   color: #303133;
 }
+
 </style>

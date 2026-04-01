@@ -10,9 +10,8 @@
       :model-value="control.data"
       type="date"
       value-format="YYYY-MM-DD"
-      :placeholder="control.uischema.options?.placeholder || 'Select date'"
+      :placeholder="control.uischema.options?.placeholder || 'YYYY:MM:DD'"
       :disabled="!control.enabled"
-      :editable="false"
       @update:model-value="val => handleChange(control.path, val)"
       style="width: 100%"
     />
@@ -36,3 +35,6 @@ const props = defineProps({
 
 const { control, handleChange } = useJsonFormsControl(props)
 </script>
+
+<style scoped>
+</style>
