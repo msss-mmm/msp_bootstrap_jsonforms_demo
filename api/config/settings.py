@@ -9,6 +9,12 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+# When running in Docker, internal service names 'ui' and 'api' should be whitelisted.
+# This ensures that inter-service communication (e.g. backend rendering PDFs from the UI) works correctly.
+if os.path.exists('/.dockerenv'):
+    ALLOWED_HOSTS.extend(['ui', 'api'])
+    ALLOWED_HOSTS = list(set(ALLOWED_HOSTS)) # Deduplicate
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -77,6 +83,9 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+ADDITIONAL_FRONTEND_URLS = os.environ.get('ADDITIONAL_FRONTEND_URLS', '').split(',')
 
 # Handle being behind a reverse proxy
 USE_X_FORWARDED_HOST = True

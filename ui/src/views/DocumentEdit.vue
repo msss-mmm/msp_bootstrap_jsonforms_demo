@@ -16,6 +16,7 @@
             </el-tag>
           </template>
           <el-button type="primary" plain icon="Printer" @click="printDocument">Print to PDF</el-button>
+          <el-button type="primary" plain icon="Printer" @click="savePdfToServer">Save to PDF</el-button>
           <el-button type="danger" plain icon="Delete" @click="discardChanges">Discard Changes</el-button>
           <el-button type="primary" plain icon="DocumentChecked" @click="saveDocument">Save Document</el-button>
         </div>
@@ -211,6 +212,18 @@ const lockDocument = async () => {
 
 const printDocument = () => {
   window.print()
+}
+
+const savePdfToServer = async () => {
+  try {
+    await axios.post(`${store.apiUrl}/documents/${route.params.id}/save_pdf/`, {
+      base_url: window.location.origin
+    })
+    ElMessage.success('PDF saved to server (api/pdfs)')
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('Failed to save PDF to server')
+  }
 }
 
 
