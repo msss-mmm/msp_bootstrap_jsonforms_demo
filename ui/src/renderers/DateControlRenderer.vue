@@ -12,6 +12,7 @@
       value-format="YYYY-MM-DD"
       :placeholder="control.uischema.options?.placeholder || 'Select date'"
       :disabled="!control.enabled"
+      :editable="false"
       @update:model-value="val => handleChange(control.path, val)"
       style="width: 100%"
     />
