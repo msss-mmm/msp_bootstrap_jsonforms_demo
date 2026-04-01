@@ -35,3 +35,15 @@ This configuration allows you to host the *same* Docker container in multiple en
 - `http://localhost:2000/prod` -> `proxy_set_header X-Forwarded-Prefix /prod;`
 
 No rebuild or `.env` changes are required when moving between these locations!
+
+## PDF Generation & Whitelisted URLs
+
+The "Save to PDF" feature uses a headless browser on the backend to render the document. For security, the backend only visits whitelisted URLs.
+
+If you are accessing the application through an SSH tunnel (e.g., `localhost:2001`) or a non-standard port that is not in the default whitelist, you must add it to the `ADDITIONAL_FRONTEND_URLS` environment variable:
+
+```bash
+ADDITIONAL_FRONTEND_URLS=http://localhost:2001,http://127.0.0.1:2001
+```
+
+Common local ports (`5173`, `2001`) and internal Docker service names (`http://ui`) are whitelisted by default.

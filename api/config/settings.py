@@ -79,6 +79,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+ADDITIONAL_FRONTEND_URLS = os.environ.get('ADDITIONAL_FRONTEND_URLS', '').split(',')
 
 # Handle being behind a reverse proxy
 USE_X_FORWARDED_HOST = True

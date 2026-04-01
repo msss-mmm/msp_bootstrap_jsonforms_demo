@@ -27,7 +27,9 @@ class DocumentInstanceViewSet(viewsets.ModelViewSet):
             'http://localhost:5173',
             'http://ui', # standard for docker-compose based networking
             'http://127.0.0.1:5173',
-        ]
+            'http://localhost:2001', # SSH tunnel support
+            'http://127.0.0.1:2001',
+        ] + [url.rstrip('/') for url in settings.ADDITIONAL_FRONTEND_URLS if url]
 
         if client_base_url and client_base_url not in whitelisted_bases:
              return Response({"error": f"Base URL {client_base_url} is not whitelisted"}, status=status.HTTP_400_BAD_REQUEST)
