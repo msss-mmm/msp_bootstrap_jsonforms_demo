@@ -11,6 +11,7 @@
       value-format="HH:mm:ss"
       :placeholder="control.uischema.options?.placeholder || 'Select time'"
       :disabled="!control.enabled"
+      :editable="false"
       @update:model-value="val => handleChange(control.path, val)"
       style="width: 100%"
     />
