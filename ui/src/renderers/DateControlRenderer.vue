@@ -36,3 +36,9 @@ const props = defineProps({
 
 const { control, handleChange } = useJsonFormsControl(props)
 </script>
+
+<style scoped>
+:deep(.el-input__inner) {
+  cursor: pointer;
+}
+</style>
