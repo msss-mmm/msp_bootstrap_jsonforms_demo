@@ -9,9 +9,8 @@
     <el-time-picker
       :model-value="control.data"
       value-format="HH:mm:ss"
-      :placeholder="control.uischema.options?.placeholder || 'Select time'"
+      :placeholder="control.uischema.options?.placeholder || 'HH:MM:SS'"
       :disabled="!control.enabled"
-      :editable="false"
       @update:model-value="val => handleChange(control.path, val)"
       style="width: 100%"
     />
@@ -37,7 +36,4 @@ const { control, handleChange } = useJsonFormsControl(props)
 </script>
 
 <style scoped>
-:deep(.el-input__inner) {
-  cursor: pointer;
-}
 </style>
