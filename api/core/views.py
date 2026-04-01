@@ -35,6 +35,14 @@ class DocumentInstanceViewSet(viewsets.ModelViewSet):
              return Response({"error": f"Base URL {client_base_url} is not whitelisted"}, status=status.HTTP_400_BAD_REQUEST)
 
         base_url = client_base_url if client_base_url else settings.FRONTEND_URL.rstrip('/')
+
+        # Network routing logic for Docker: 'localhost' in a container refers to itself.
+        # We must route to 'http://ui' internally to reach the frontend container.
+        if os.path.exists('/.dockerenv') and ('localhost' in base_url or '127.0.0.1' in base_url):
+             # Replace the host and port with the internal service name 'ui'
+             base_url = re.sub(r'(https?://)?localhost(:\d+)?', r'\1ui', base_url)
+             base_url = re.sub(r'(https?://)?127\.0\.0\.1(:\d+)?', r'\1ui', base_url)
+
         # Note: We append a mock user query param in case future auth needs it.
         # In current setup, the app is open-access for rendering.
         frontend_url = f"{base_url}/documents/{instance.id}?user=Admin"
