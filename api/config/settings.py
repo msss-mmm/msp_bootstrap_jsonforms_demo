@@ -9,6 +9,12 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+# When running in Docker, internal service names 'ui' and 'api' should be whitelisted.
+# This ensures that inter-service communication (e.g. backend rendering PDFs from the UI) works correctly.
+if os.path.exists('/.dockerenv'):
+    ALLOWED_HOSTS.extend(['ui', 'api'])
+    ALLOWED_HOSTS = list(set(ALLOWED_HOSTS)) # Deduplicate
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
