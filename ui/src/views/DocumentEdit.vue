@@ -17,8 +17,7 @@
           </template>
           <el-button type="primary" plain icon="Printer" @click="printDocument">Print to PDF</el-button>
           <el-button type="primary" plain icon="Printer" @click="savePdfToServer">Save to PDF</el-button>
-          <el-button type="danger" plain icon="Delete" @click="discardChanges">Discard Changes</el-button>
-          <el-button type="primary" plain icon="DocumentChecked" @click="saveDocument">Save Document</el-button>
+          <el-button type="danger" plain icon="Delete" @click="discardChanges">Discard/Revert</el-button>
         </div>
       </template>
     </el-page-header>
@@ -53,7 +52,7 @@ import { useAppStore } from '../stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { JsonForms } from '@jsonforms/vue'
 import { elementRenderers, readOnlyRenderers } from '../renderers'
-import isEqual from 'lodash/isEqual'
+import debounce from 'lodash/debounce'
 
 const route = useRoute()
 const router = useRouter()
@@ -61,6 +60,7 @@ const store = useAppStore()
 
 const doc = ref(null)
 const formData = ref({})
+const initialFormData = ref({})
 const hasChanges = ref(false)
 const isInitializing = ref(false)
 const isPrinting = ref(false)
@@ -80,16 +80,42 @@ const activeRenderers = computed(() => {
 const onFormChange = (event) => {
   if (isInitializing.value) return
   if (event && event.data) {
-    // Check if the data has actually changed before updating state
     const currentData = JSON.stringify(formData.value)
     const newData = JSON.stringify(event.data)
 
     if (currentData !== newData) {
+        const oldData = formData.value
         formData.value = event.data
         hasChanges.value = true
+
+        // Detect if it was a Timer change (immediate save)
+        const isTimerChange = detectTimerChange(oldData, event.data)
+        if (isTimerChange) {
+          saveDocument(false)
+        } else {
+          debouncedSave()
+        }
     }
   }
 }
+
+const detectTimerChange = (oldData, newData) => {
+  const schema = doc.value?.template_schema?.properties || {}
+  for (const [key, prop] of Object.entries(schema)) {
+    if (prop.type === 'object' && prop.properties?.startTime) {
+       if (JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])) {
+         return true
+       }
+    }
+  }
+  return false
+}
+
+const debouncedSave = debounce(() => {
+  if (hasChanges.value) {
+    saveDocument(false)
+  }
+}, 1000)
 
 onBeforeRouteLeave((to, from, next) => {
   if (hasChanges.value) {
@@ -148,8 +174,10 @@ const fetchDoc = async () => {
       })
       formData.value = defaults
     } else {
-      formData.value = currentData
+      formData.value = JSON.parse(JSON.stringify(currentData))
     }
+
+    initialFormData.value = JSON.parse(JSON.stringify(formData.value))
 
     setTimeout(() => {
       isInitializing.value = false
@@ -175,9 +203,25 @@ const handleBack = () => {
   router.push('/')
 }
 
-const discardChanges = () => {
-  hasChanges.value = false
-  router.push('/')
+const discardChanges = async () => {
+  try {
+    await ElMessageBox.confirm(
+      'This will revert all changes since you opened this document. Are you sure?',
+      'Discard/Revert',
+      { confirmButtonText: 'Revert', cancelButtonText: 'Cancel', type: 'warning' }
+    )
+
+    await axios.patch(`${store.apiUrl}/documents/${route.params.id}/`, {
+      data: initialFormData.value
+    })
+
+    formData.value = JSON.parse(JSON.stringify(initialFormData.value))
+    hasChanges.value = false
+    ElMessage.success('Document reverted to initial state')
+    router.push('/')
+  } catch (e) {
+    // Cancelled or error
+  }
 }
 
 const saveDocument = async (showMsg = true) => {
