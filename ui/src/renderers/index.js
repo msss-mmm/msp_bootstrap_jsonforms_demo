@@ -9,15 +9,21 @@ import VerticalLayoutRenderer from './VerticalLayoutRenderer.vue'
 import HorizontalLayoutRenderer from './HorizontalLayoutRenderer.vue'
 import GroupLayoutRenderer from './GroupLayoutRenderer.vue'
 import ApprovalControlRenderer from './ApprovalControlRenderer.vue'
+import TimerControlRenderer from './TimerControlRenderer.vue'
 import ReadOnlyControlRenderer from './ReadOnlyControlRenderer.vue'
 
 const isApprovalControl = (uischema) => {
   return isControl(uischema) && (uischema.options?.type === 'OperatorApprove' || uischema.options?.type === 'QAApprove')
 }
 
+const isTimerControl = (uischema) => {
+  return isControl(uischema) && uischema.options?.type === 'Timer'
+}
+
 export const elementRenderers = [
   ...vanillaRenderers,
   { tester: rankWith(100, isApprovalControl), renderer: ApprovalControlRenderer },
+  { tester: rankWith(100, isTimerControl), renderer: TimerControlRenderer },
    { tester: rankWith(10, isStringControl), renderer: StringControlRenderer },
    { tester: rankWith(20, isNumberControl), renderer: NumberControlRenderer },
    { tester: rankWith(20, isBooleanControl), renderer: BooleanControlRenderer },
@@ -31,6 +37,7 @@ export const elementRenderers = [
 export const readOnlyRenderers = [
   ...vanillaRenderers,
   { tester: rankWith(200, isApprovalControl), renderer: ApprovalControlRenderer },
+  { tester: rankWith(200, isTimerControl), renderer: TimerControlRenderer },
   { tester: rankWith(150, isControl), renderer: ReadOnlyControlRenderer },
   { tester: rankWith(10, uiTypeIs('VerticalLayout')), renderer: VerticalLayoutRenderer },
   { tester: rankWith(10, uiTypeIs('HorizontalLayout')), renderer: HorizontalLayoutRenderer },
