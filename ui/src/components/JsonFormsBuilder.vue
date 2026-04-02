@@ -186,7 +186,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import BuilderCanvasElement from './BuilderCanvasElement.vue'
 import BoxModelEditor from './BoxModelEditor.vue'
-import { Edit, Document, Check, Calendar, Timer, Delete, Connection, Menu, List, CircleCheck, Finished, Plus } from '@element-plus/icons-vue'
+import { Edit, Document, Check, Calendar, Timer, AlarmClock, Delete, Connection, Menu, List, CircleCheck, Finished, Plus } from '@element-plus/icons-vue'
 
 const props = defineProps({
   schema: { type: Object, required: true },
@@ -290,6 +290,7 @@ const controlItems = [
   { label: 'Time Picker', type: 'string', format: 'time', icon: 'Timer' },
   { label: 'Radio Group', type: 'string', options: { format: 'radio' }, icon: 'CircleCheck' },
   { label: 'Multi-select', type: 'array', options: { format: 'multi-select' }, icon: 'Finished' },
+  { label: 'Timer', type: 'object', options: { type: 'Timer' }, icon: 'AlarmClock' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
   { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' }
 ]
@@ -410,7 +411,15 @@ const onCanvasDrop = (event) => {
         newSchema.properties[id].uniqueItems = true
       }
       if (item.type === 'object' && item.options) {
-        newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
+        if (item.options.type === 'Timer') {
+          newSchema.properties[id].properties = {
+            startTime: { type: 'string' },
+            stopTime: { type: 'string' },
+            total: { type: 'string' }
+          }
+        } else {
+          newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
+        }
       }
       elementToInsert = {
         type: 'Control',
