@@ -292,6 +292,7 @@ const controlItems = [
   { label: 'Radio Group', type: 'string', options: { format: 'radio' }, icon: 'CircleCheck' },
   { label: 'Multi-select', type: 'array', options: { format: 'multi-select' }, icon: 'Finished' },
   { label: 'Timer', type: 'object', options: { type: 'Timer' }, icon: 'AlarmClock' },
+  { label: 'External Capture', type: 'object', options: { type: 'ExternalCapture' }, icon: 'Download' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
   { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' }
 ]
@@ -417,6 +418,12 @@ const onCanvasDrop = (event) => {
             startTime: { type: 'string' },
             stopTime: { type: 'string' },
             total: { type: 'string' }
+          }
+        } else if (item.options.type === 'ExternalCapture') {
+          newSchema.properties[id].properties = {
+            source: { type: 'string' },
+            value: { type: 'string' },
+            timestamp: { type: 'string' }
           }
         } else {
           newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
