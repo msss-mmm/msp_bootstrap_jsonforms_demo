@@ -9,27 +9,17 @@
     <el-radio-group
       :model-value="control.data"
       :disabled="!control.enabled"
+      :class="{ 'is-vertical': control.uischema.options?.orientation === 'vertical' }"
       @change="val => handleChange(control.path, val)"
     >
-      <template v-if="control.uischema.options?.orientation === 'vertical'">
-        <el-radio
-          v-for="option in options"
-          :key="option"
-          :label="option"
-          style="display: block; margin-bottom: 8px;"
-        >
-          {{ option }}
-        </el-radio>
-      </template>
-      <template v-else>
-        <el-radio
-          v-for="option in options"
-          :key="option"
-          :label="option"
-        >
-          {{ option }}
-        </el-radio>
-      </template>
+      <el-radio
+        v-for="option in options"
+        :key="option"
+        :label="option"
+        :style="control.uischema.options?.orientation === 'vertical' ? 'margin-bottom: 8px; margin-right: 0;' : ''"
+      >
+        {{ option }}
+      </el-radio>
     </el-radio-group>
   </control-wrapper>
   <read-only-field
@@ -56,3 +46,11 @@ const options = computed(() => {
   return control.value.schema.enum || []
 })
 </script>
+
+<style scoped>
+.el-radio-group.is-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+</style>

@@ -9,27 +9,17 @@
     <el-checkbox-group
       :model-value="control.data || []"
       :disabled="!control.enabled"
+      :class="{ 'is-vertical': control.uischema.options?.orientation !== 'horizontal' }"
       @change="val => handleChange(control.path, val)"
     >
-      <template v-if="control.uischema.options?.orientation === 'horizontal'">
-        <el-checkbox
-          v-for="option in options"
-          :key="option"
-          :label="option"
-        >
-          {{ option }}
-        </el-checkbox>
-      </template>
-      <template v-else>
-        <el-checkbox
-          v-for="option in options"
-          :key="option"
-          :label="option"
-          style="display: block; margin-bottom: 8px;"
-        >
-          {{ option }}
-        </el-checkbox>
-      </template>
+      <el-checkbox
+        v-for="option in options"
+        :key="option"
+        :label="option"
+        :style="control.uischema.options?.orientation !== 'horizontal' ? 'margin-bottom: 8px; margin-right: 0;' : ''"
+      >
+        {{ option }}
+      </el-checkbox>
     </el-checkbox-group>
   </control-wrapper>
   <read-only-field
@@ -56,3 +46,11 @@ const options = computed(() => {
   return control.value.schema.items?.enum || []
 })
 </script>
+
+<style scoped>
+.el-checkbox-group.is-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+</style>

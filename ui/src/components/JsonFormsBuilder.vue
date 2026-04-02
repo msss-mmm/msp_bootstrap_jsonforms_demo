@@ -91,7 +91,7 @@
             <template v-if="selectedItem.options.format === 'radio' || selectedItem.options.format === 'multi-select'">
               <el-divider>Options</el-divider>
               <div v-for="(opt, idx) in selectedItem.enum" :key="idx" style="display: flex; gap: 5px; margin-bottom: 5px;">
-                <el-input v-model="selectedItem.enum[idx]" @input="updateSchema" size="small" />
+                <el-input :model-value="opt" @input="val => updateOption(idx, val)" size="small" />
                 <el-button type="danger" icon="Delete" circle size="small" @click="removeOption(idx)" />
               </div>
               <el-button type="primary" :icon="Plus" size="small" @click="addOption" style="width: 100%; margin-bottom: 10px;">Add Option</el-button>
@@ -531,18 +531,65 @@ const getElementByPathInTree = (tree, path) => {
 }
 
 const addOption = () => {
-  if (!selectedItem.value) return
-  const newOptions = [...selectedItem.value.enum, `Option ${selectedItem.value.enum.length + 1}`]
-  selectedItem.value.enum = newOptions
-  updateSchema()
+  if (!selectedItem.value || !selectedPath.value) return
+  const uielem = getElementByPath(selectedPath.value)
+  if (!uielem || !uielem.scope) return
+  const fieldId = uielem.scope.split('/').pop()
+
+  const newSchema = JSON.parse(JSON.stringify(props.schema))
+  const prop = newSchema.properties[fieldId]
+  const enums = prop.type === 'array' ? (prop.items.enum || []) : (prop.enum || [])
+  const newEnums = [...enums, `Option ${enums.length + 1}`]
+
+  if (prop.type === 'array') prop.items.enum = newEnums
+  else prop.enum = newEnums
+
+  emit('update:schema', newSchema)
 }
 
 const removeOption = (index) => {
-  if (!selectedItem.value) return
-  const newOptions = [...selectedItem.value.enum]
-  newOptions.splice(index, 1)
-  selectedItem.value.enum = newOptions
-  updateSchema()
+  if (!selectedItem.value || !selectedPath.value) return
+  const uielem = getElementByPath(selectedPath.value)
+  if (!uielem || !uielem.scope) return
+  const fieldId = uielem.scope.split('/').pop()
+
+  const newSchema = JSON.parse(JSON.stringify(props.schema))
+  const prop = newSchema.properties[fieldId]
+  const enums = prop.type === 'array' ? (prop.items.enum || []) : (prop.enum || [])
+  const newEnums = [...enums]
+  newEnums.splice(index, 1)
+
+  if (prop.type === 'array') prop.items.enum = newEnums
+  else prop.enum = newEnums
+
+  // Also clear default if it was the removed option
+  if (prop.default === enums[index]) delete prop.default
+  if (prop.type === 'array' && Array.isArray(prop.default)) {
+     prop.default = prop.default.filter(v => v !== enums[index])
+  }
+
+  emit('update:schema', newSchema)
+}
+
+const updateOption = (index, value) => {
+  if (!selectedPath.value) return
+  const uielem = getElementByPath(selectedPath.value)
+  if (!uielem || !uielem.scope) return
+  const fieldId = uielem.scope.split('/').pop()
+
+  const newSchema = JSON.parse(JSON.stringify(props.schema))
+  const prop = newSchema.properties[fieldId]
+  const enums = prop.type === 'array' ? prop.items.enum : prop.enum
+  const oldVal = enums[index]
+  enums[index] = value
+
+  // Update default value if it matched the old option value
+  if (prop.default === oldVal) prop.default = value
+  if (prop.type === 'array' && Array.isArray(prop.default)) {
+    prop.default = prop.default.map(v => v === oldVal ? value : v)
+  }
+
+  emit('update:schema', newSchema)
 }
 
 const updateSchema = () => {
