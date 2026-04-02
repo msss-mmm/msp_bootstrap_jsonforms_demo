@@ -87,6 +87,23 @@
             <el-form-item label="Description">
               <el-input v-model="selectedItem.description" @input="updateSchema" />
             </el-form-item>
+
+            <template v-if="selectedItem.options.format === 'radio' || selectedItem.type === 'array'">
+              <el-divider>Options</el-divider>
+              <div v-for="(opt, idx) in selectedItem.enum" :key="idx" style="display: flex; gap: 5px; margin-bottom: 5px;">
+                <el-input v-model="selectedItem.enum[idx]" @input="updateSchema" size="small" />
+                <el-button type="danger" icon="Delete" circle size="small" @click="removeOption(idx)" />
+              </div>
+              <el-button type="primary" :icon="Plus" size="small" @click="addOption" style="width: 100%; margin-bottom: 10px;">Add Option</el-button>
+
+              <el-form-item label="Orientation">
+                <el-select v-model="selectedItem.options.orientation" @change="updateUiSchema" style="width: 100%" size="small">
+                  <el-option label="Horizontal" value="horizontal" />
+                  <el-option label="Vertical" value="vertical" />
+                </el-select>
+              </el-form-item>
+            </template>
+
             <el-form-item>
               <el-checkbox v-model="selectedItem.readOnly" @change="updateSchema">Read Only</el-checkbox>
             </el-form-item>
@@ -98,7 +115,13 @@
                 </div>
               </template>
               <template v-if="selectedItem.hasDefault">
-                <el-input v-if="selectedItem.type === 'string' && !selectedItem.format" v-model="selectedItem.default" @input="updateSchema" />
+                <el-select v-if="selectedItem.options.format === 'radio'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" clearable>
+                   <el-option v-for="opt in selectedItem.enum" :key="opt" :label="opt" :value="opt" />
+                </el-select>
+                <el-select v-else-if="selectedItem.type === 'array'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" multiple clearable>
+                   <el-option v-for="opt in selectedItem.enum" :key="opt" :label="opt" :value="opt" />
+                </el-select>
+                <el-input v-else-if="selectedItem.type === 'string' && !selectedItem.format" v-model="selectedItem.default" @input="updateSchema" />
                 <el-input-number v-else-if="selectedItem.type === 'number'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" />
                 <el-checkbox v-else-if="selectedItem.type === 'boolean'" v-model="selectedItem.default" @change="updateSchema">Active</el-checkbox>
                 <el-date-picker v-else-if="selectedItem.format === 'date'" v-model="selectedItem.default" type="date" value-format="YYYY-MM-DD" placeholder="YYYY:MM:DD" @change="updateSchema" style="width: 100%" />
@@ -163,7 +186,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import BuilderCanvasElement from './BuilderCanvasElement.vue'
 import BoxModelEditor from './BoxModelEditor.vue'
-import { Edit, Document, Check, Calendar, Timer, Delete, Connection, Menu, List } from '@element-plus/icons-vue'
+import { Edit, Document, Check, Calendar, Timer, Delete, Connection, Menu, List, CircleCheck, Finished, Plus } from '@element-plus/icons-vue'
 
 const props = defineProps({
   schema: { type: Object, required: true },
@@ -265,6 +288,8 @@ const controlItems = [
   { label: 'Boolean/Check', type: 'boolean', icon: 'Check' },
   { label: 'Date Picker', type: 'string', format: 'date', icon: 'Calendar' },
   { label: 'Time Picker', type: 'string', format: 'time', icon: 'Timer' },
+  { label: 'Radio Group', type: 'string', options: { format: 'radio' }, icon: 'CircleCheck' },
+  { label: 'Multi-select', type: 'array', icon: 'Finished' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
   { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' }
 ]
@@ -308,6 +333,8 @@ const selectedItem = computed(() => {
     ...(uielem.options || {})
   }
 
+  const enums = isControl ? (schelem.enum || schelem.items?.enum || []) : []
+
   return {
     isControl,
     id: fieldId,
@@ -318,6 +345,7 @@ const selectedItem = computed(() => {
     default: schelem.default,
     hasDefault: schelem.default !== undefined,
     readOnly: schelem.readOnly || false,
+    enum: enums,
     options
   }
 })
@@ -373,6 +401,14 @@ const onCanvasDrop = (event) => {
         readOnly: false
       }
       if (item.format) newSchema.properties[id].format = item.format
+
+      // Default options for new Radio/Multi-select
+      if (item.options?.format === 'radio') {
+        newSchema.properties[id].enum = ['Option 1', 'Option 2']
+      } else if (item.type === 'array') {
+        newSchema.properties[id].items = { type: 'string', enum: ['Option 1', 'Option 2'] }
+        newSchema.properties[id].uniqueItems = true
+      }
       if (item.type === 'object' && item.options) {
         newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
       }
@@ -381,6 +417,10 @@ const onCanvasDrop = (event) => {
         scope: `#/properties/${id}`,
         label: item.label,
         options: item.options ? { ...item.options } : {}
+      }
+      if (item.options?.format === 'radio' || item.type === 'array') {
+        if (!elementToInsert.options) elementToInsert.options = {}
+        elementToInsert.options.orientation = 'vertical'
       }
     }
   } else {
@@ -490,6 +530,21 @@ const getElementByPathInTree = (tree, path) => {
   return curr
 }
 
+const addOption = () => {
+  if (!selectedItem.value) return
+  const newOptions = [...selectedItem.value.enum, `Option ${selectedItem.value.enum.length + 1}`]
+  selectedItem.value.enum = newOptions
+  updateSchema()
+}
+
+const removeOption = (index) => {
+  if (!selectedItem.value) return
+  const newOptions = [...selectedItem.value.enum]
+  newOptions.splice(index, 1)
+  selectedItem.value.enum = newOptions
+  updateSchema()
+}
+
 const updateSchema = () => {
   const uielem = getElementByPath(selectedPath.value)
   if (!uielem || !uielem.scope) return
@@ -501,6 +556,15 @@ const updateSchema = () => {
   currentProps.description = selectedItem.value.description
   currentProps.readOnly = selectedItem.value.readOnly
 
+  // Update enums for Radio/Multi-select
+  if (currentProps.type === 'array') {
+    if (!currentProps.items) currentProps.items = { type: 'string' }
+    currentProps.items.enum = selectedItem.value.enum
+    currentProps.uniqueItems = true
+  } else if (selectedItem.value.options?.format === 'radio') {
+    currentProps.enum = selectedItem.value.enum
+  }
+
   if (selectedItem.value.hasDefault) {
     let val = selectedItem.value.default
     if (val === undefined || val === null) {
@@ -508,6 +572,7 @@ const updateSchema = () => {
       else if (currentProps.type === 'boolean') val = false
       else if (currentProps.format === 'date') val = new Date().toISOString().split('T')[0]
       else if (currentProps.format === 'time') val = '12:00:00'
+      else if (currentProps.type === 'array') val = []
       else val = ''
     }
     if (currentProps.type === 'number') val = Number(val) || 0

@@ -5,6 +5,8 @@ import NumberControlRenderer from './NumberControlRenderer.vue'
 import BooleanControlRenderer from './BooleanControlRenderer.vue'
 import DateControlRenderer from './DateControlRenderer.vue'
 import TimeControlRenderer from './TimeControlRenderer.vue'
+import RadioControlRenderer from './RadioControlRenderer.vue'
+import MultiSelectControlRenderer from './MultiSelectControlRenderer.vue'
 import VerticalLayoutRenderer from './VerticalLayoutRenderer.vue'
 import HorizontalLayoutRenderer from './HorizontalLayoutRenderer.vue'
 import GroupLayoutRenderer from './GroupLayoutRenderer.vue'
@@ -15,9 +17,19 @@ const isApprovalControl = (uischema) => {
   return isControl(uischema) && (uischema.options?.type === 'OperatorApprove' || uischema.options?.type === 'QAApprove')
 }
 
+const isRadioControl = (uischema, schema) => {
+  return isControl(uischema) && schema?.enum !== undefined && uischema.options?.format === 'radio'
+}
+
+const isMultiSelectControl = (uischema, schema) => {
+  return isControl(uischema) && schema?.type === 'array' && schema?.items?.enum !== undefined
+}
+
 export const elementRenderers = [
   ...vanillaRenderers,
   { tester: rankWith(100, isApprovalControl), renderer: ApprovalControlRenderer },
+   { tester: rankWith(25, isRadioControl), renderer: RadioControlRenderer },
+   { tester: rankWith(25, isMultiSelectControl), renderer: MultiSelectControlRenderer },
    { tester: rankWith(10, isStringControl), renderer: StringControlRenderer },
    { tester: rankWith(20, isNumberControl), renderer: NumberControlRenderer },
    { tester: rankWith(20, isBooleanControl), renderer: BooleanControlRenderer },

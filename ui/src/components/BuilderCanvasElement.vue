@@ -110,7 +110,7 @@ const handleCanvasChange = (payload) => {
     const id = props.element.scope.split('/').pop()
     // Deep compare to prevent loops
     const currentVal = props.testData[id]
-    const newVal = payload.data[id]
+    const newVal = payload.data?.[id]
     if (JSON.stringify(newVal) !== JSON.stringify(currentVal)) {
       emit('canvas-change', { id, value: newVal })
     }

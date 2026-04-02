@@ -22,7 +22,7 @@ import { computed } from 'vue'
 import { Check, Close } from '@element-plus/icons-vue'
 
 const props = defineProps({
-  modelValue: [String, Number, Boolean],
+  modelValue: [String, Number, Boolean, Array],
   label: String,
   type: {
     type: String,
@@ -37,6 +37,9 @@ const isEmpty = computed(() => {
 const formattedValue = computed(() => {
   if (isEmpty.value) {
     return '—'
+  }
+  if (Array.isArray(props.modelValue)) {
+    return props.modelValue.join(', ')
   }
   return props.modelValue
 })
