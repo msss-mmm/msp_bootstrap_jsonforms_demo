@@ -17,12 +17,12 @@ const isApprovalControl = (uischema) => {
   return isControl(uischema) && (uischema.options?.type === 'OperatorApprove' || uischema.options?.type === 'QAApprove')
 }
 
-const isRadioControl = (uischema, schema) => {
-  return isControl(uischema) && schema?.enum !== undefined && uischema.options?.format === 'radio'
+const isRadioControl = (uischema) => {
+  return isControl(uischema) && uischema.options?.format === 'radio'
 }
 
-const isMultiSelectControl = (uischema, schema) => {
-  return isControl(uischema) && schema?.type === 'array' && schema?.items?.enum !== undefined
+const isMultiSelectControl = (uischema) => {
+  return isControl(uischema) && uischema.options?.format === 'multi-select'
 }
 
 export const elementRenderers = [

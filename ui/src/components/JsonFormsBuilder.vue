@@ -88,7 +88,7 @@
               <el-input v-model="selectedItem.description" @input="updateSchema" />
             </el-form-item>
 
-            <template v-if="selectedItem.options.format === 'radio' || selectedItem.type === 'array'">
+            <template v-if="selectedItem.options.format === 'radio' || selectedItem.options.format === 'multi-select'">
               <el-divider>Options</el-divider>
               <div v-for="(opt, idx) in selectedItem.enum" :key="idx" style="display: flex; gap: 5px; margin-bottom: 5px;">
                 <el-input v-model="selectedItem.enum[idx]" @input="updateSchema" size="small" />
@@ -118,7 +118,7 @@
                 <el-select v-if="selectedItem.options.format === 'radio'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" clearable>
                    <el-option v-for="opt in selectedItem.enum" :key="opt" :label="opt" :value="opt" />
                 </el-select>
-                <el-select v-else-if="selectedItem.type === 'array'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" multiple clearable>
+                <el-select v-else-if="selectedItem.options.format === 'multi-select'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" multiple clearable>
                    <el-option v-for="opt in selectedItem.enum" :key="opt" :label="opt" :value="opt" />
                 </el-select>
                 <el-input v-else-if="selectedItem.type === 'string' && !selectedItem.format" v-model="selectedItem.default" @input="updateSchema" />
@@ -289,7 +289,7 @@ const controlItems = [
   { label: 'Date Picker', type: 'string', format: 'date', icon: 'Calendar' },
   { label: 'Time Picker', type: 'string', format: 'time', icon: 'Timer' },
   { label: 'Radio Group', type: 'string', options: { format: 'radio' }, icon: 'CircleCheck' },
-  { label: 'Multi-select', type: 'array', icon: 'Finished' },
+  { label: 'Multi-select', type: 'array', options: { format: 'multi-select' }, icon: 'Finished' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
   { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' }
 ]
@@ -405,7 +405,7 @@ const onCanvasDrop = (event) => {
       // Default options for new Radio/Multi-select
       if (item.options?.format === 'radio') {
         newSchema.properties[id].enum = ['Option 1', 'Option 2']
-      } else if (item.type === 'array') {
+      } else if (item.options?.format === 'multi-select') {
         newSchema.properties[id].items = { type: 'string', enum: ['Option 1', 'Option 2'] }
         newSchema.properties[id].uniqueItems = true
       }
@@ -418,7 +418,7 @@ const onCanvasDrop = (event) => {
         label: item.label,
         options: item.options ? { ...item.options } : {}
       }
-      if (item.options?.format === 'radio' || item.type === 'array') {
+      if (item.options?.format === 'radio' || item.options?.format === 'multi-select') {
         if (!elementToInsert.options) elementToInsert.options = {}
         elementToInsert.options.orientation = 'vertical'
       }
@@ -557,7 +557,7 @@ const updateSchema = () => {
   currentProps.readOnly = selectedItem.value.readOnly
 
   // Update enums for Radio/Multi-select
-  if (currentProps.type === 'array') {
+  if (selectedItem.value.options?.format === 'multi-select') {
     if (!currentProps.items) currentProps.items = { type: 'string' }
     currentProps.items.enum = selectedItem.value.enum
     currentProps.uniqueItems = true
