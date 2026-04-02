@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import axios from 'axios'
 import { useAppStore } from '../stores/app'
@@ -236,7 +236,15 @@ const confirmCloneTemplate = async () => {
   }
 }
 
+const handleBeforeUnload = (e) => {
+  if (hasChanges.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
 onMounted(async () => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
   await fetchTemplates()
   await fetchTemplate()
   if (!isEdit.value && !schema.value) {
@@ -250,6 +258,10 @@ onMounted(async () => {
       elements: []
     }
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 </script>
 

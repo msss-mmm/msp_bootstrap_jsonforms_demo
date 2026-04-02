@@ -193,7 +193,7 @@ const props = defineProps({
   uischema: { type: Object, required: true }
 })
 
-const emit = defineEmits(['update:schema', 'update:uischema'])
+const emit = defineEmits(['update:schema', 'update:uischema', 'change'])
 
 const testData = ref({})
 let isInternalUpdate = false
@@ -262,6 +262,7 @@ const onCanvasChange = ({ id, value }) => {
     // Set flag to ignore the next prop update resulting from this emit
     isInternalUpdate = true
     emit('update:schema', newSchema)
+    emit('change')
     nextTick(() => { isInternalUpdate = false })
   }
 }
@@ -507,6 +508,7 @@ const onCanvasDrop = (event) => {
 
   emit('update:schema', newSchema)
   emit('update:uischema', newUiSchema)
+  emit('change')
   isDragging.value = false
   draggedItem.value = null
   draggedOverPath.value = null
@@ -529,6 +531,7 @@ const updateFieldId = (newId) => {
   const target = getElementByPathInTree(newUiSchema, selectedPath.value)
   target.scope = `#/properties/${newId}`
   emit('update:uischema', newUiSchema)
+  emit('change')
 }
 
 const getElementByPathInTree = (tree, path) => {
@@ -554,6 +557,7 @@ const addOption = () => {
   else prop.enum = newEnums
 
   emit('update:schema', newSchema)
+  emit('change')
 }
 
 const removeOption = (index) => {
@@ -578,6 +582,7 @@ const removeOption = (index) => {
   }
 
   emit('update:schema', newSchema)
+  emit('change')
 }
 
 const updateOption = (index, value) => {
@@ -599,6 +604,7 @@ const updateOption = (index, value) => {
   }
 
   emit('update:schema', newSchema)
+  emit('change')
 }
 
 const updateSchema = () => {
@@ -642,6 +648,7 @@ const updateSchema = () => {
 
   newSchema.properties[fieldId] = currentProps
   emit('update:schema', newSchema)
+  emit('change')
 }
 
 const updateUiSchema = () => {
@@ -650,6 +657,7 @@ const updateUiSchema = () => {
   target.label = selectedItem.value.label
   target.options = { ...selectedItem.value.options }
   emit('update:uischema', newUiSchema)
+  emit('change')
 }
 
 const removeSelected = () => {
@@ -670,6 +678,7 @@ const removeSelected = () => {
 
   emit('update:schema', newSchema)
   emit('update:uischema', newUiSchema)
+  emit('change')
   selectedPath.value = null
 }
 
@@ -680,6 +689,7 @@ const selectBreadcrumb = (i) => {
 const clearForm = () => {
   emit('update:schema', { type: 'object', properties: {} })
   emit('update:uischema', { type: 'VerticalLayout', elements: [] })
+  emit('change')
   selectedPath.value = null
 }
 </script>

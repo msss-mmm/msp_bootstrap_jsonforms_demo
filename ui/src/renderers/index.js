@@ -24,6 +24,7 @@ const isRadioControl = (uischema) => {
 
 const isMultiSelectControl = (uischema) => {
   return isControl(uischema) && uischema.options?.format === 'multi-select'
+}
 const isTimerControl = (uischema) => {
   return isControl(uischema) && uischema.options?.type === 'Timer'
 }
