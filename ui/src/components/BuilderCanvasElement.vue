@@ -63,7 +63,7 @@
       </div>
 
       <!-- Non-layout Control -->
-      <div v-else class="control-container" :data-field-id="fieldId">
+       <div v-else class="control-container" :data-field-id="fieldId" :class="{ 'is-interactive': isInteractiveControl }">
          <json-forms
            v-if="schema && schema.properties"
            :data="testData"
@@ -110,7 +110,7 @@ const handleCanvasChange = (payload) => {
     const id = props.element.scope.split('/').pop()
     // Deep compare to prevent loops
     const currentVal = props.testData[id]
-    const newVal = payload.data[id]
+    const newVal = payload.data?.[id]
     if (JSON.stringify(newVal) !== JSON.stringify(currentVal)) {
       emit('canvas-change', { id, value: newVal })
     }
@@ -118,6 +118,10 @@ const handleCanvasChange = (payload) => {
 }
 
 const isLayout = computed(() => ['VerticalLayout', 'HorizontalLayout', 'Group'].includes(props.element.type))
+const isInteractiveControl = computed(() =>
+  props.element.type === 'Control' &&
+  (props.element.options?.format === 'radio' || props.element.options?.format === 'multi-select')
+)
 const isSelected = computed(() => JSON.stringify(props.path) === JSON.stringify(props.selectedPath))
 const isDraggingOver = computed(() => JSON.stringify(props.path) === JSON.stringify(props.draggedOverPath))
 
@@ -341,5 +345,17 @@ const onClick = () => {
 
 .is-dragging {
   opacity: 0.4;
+}
+
+.control-container.is-interactive {
+  pointer-events: all;
+}
+
+.builder-canvas-element:not(.is-layout) {
+  pointer-events: none;
+}
+
+.builder-canvas-element:not(.is-layout) :deep(*) {
+  pointer-events: all;
 }
 </style>

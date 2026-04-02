@@ -5,6 +5,8 @@ import NumberControlRenderer from './NumberControlRenderer.vue'
 import BooleanControlRenderer from './BooleanControlRenderer.vue'
 import DateControlRenderer from './DateControlRenderer.vue'
 import TimeControlRenderer from './TimeControlRenderer.vue'
+import RadioControlRenderer from './RadioControlRenderer.vue'
+import MultiSelectControlRenderer from './MultiSelectControlRenderer.vue'
 import VerticalLayoutRenderer from './VerticalLayoutRenderer.vue'
 import HorizontalLayoutRenderer from './HorizontalLayoutRenderer.vue'
 import GroupLayoutRenderer from './GroupLayoutRenderer.vue'
@@ -16,6 +18,12 @@ const isApprovalControl = (uischema) => {
   return isControl(uischema) && (uischema.options?.type === 'OperatorApprove' || uischema.options?.type === 'QAApprove')
 }
 
+const isRadioControl = (uischema) => {
+  return isControl(uischema) && uischema.options?.format === 'radio'
+}
+
+const isMultiSelectControl = (uischema) => {
+  return isControl(uischema) && uischema.options?.format === 'multi-select'
 const isTimerControl = (uischema) => {
   return isControl(uischema) && uischema.options?.type === 'Timer'
 }
@@ -23,6 +31,8 @@ const isTimerControl = (uischema) => {
 export const elementRenderers = [
   ...vanillaRenderers,
   { tester: rankWith(100, isApprovalControl), renderer: ApprovalControlRenderer },
+   { tester: rankWith(25, isRadioControl), renderer: RadioControlRenderer },
+   { tester: rankWith(25, isMultiSelectControl), renderer: MultiSelectControlRenderer },
   { tester: rankWith(100, isTimerControl), renderer: TimerControlRenderer },
    { tester: rankWith(10, isStringControl), renderer: StringControlRenderer },
    { tester: rankWith(20, isNumberControl), renderer: NumberControlRenderer },
