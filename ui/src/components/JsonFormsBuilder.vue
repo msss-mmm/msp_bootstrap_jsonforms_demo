@@ -4,15 +4,15 @@
     <div class="sidebar palette no-print">
       <h3>Palette</h3>
       <div class="palette-group">
-        <h4>Layouts</h4>
-        <div v-for="item in layoutItems" :key="item.label" class="palette-item" draggable="true" @dragstart="onDragStartPalette($event, item)">
+        <h4>Controls</h4>
+        <div v-for="item in controlItems" :key="item.label" class="palette-item" draggable="true" @dragstart="onDragStartPalette($event, item)">
           <el-icon><component :is="item.icon" /></el-icon>
           <span>{{ item.label }}</span>
         </div>
       </div>
       <div class="palette-group">
-        <h4>Controls</h4>
-        <div v-for="item in controlItems" :key="item.label" class="palette-item" draggable="true" @dragstart="onDragStartPalette($event, item)">
+        <h4>Layouts</h4>
+        <div v-for="item in layoutItems" :key="item.label" class="palette-item" draggable="true" @dragstart="onDragStartPalette($event, item)">
           <el-icon><component :is="item.icon" /></el-icon>
           <span>{{ item.label }}</span>
         </div>
