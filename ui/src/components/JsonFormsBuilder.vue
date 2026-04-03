@@ -348,8 +348,12 @@ const selectedItem = computed(() => {
   const fieldId = isControl && uielem.scope ? uielem.scope.split('/').pop() : ''
   const schelem = isControl ? (props.schema?.properties?.[fieldId] || {}) : {}
 
+  const defaultMargin = uielem.type === 'Group'
+    ? { top: '10px', right: '15px', bottom: '10px', left: '15px' }
+    : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+
   const options = {
-    margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+    margin: defaultMargin,
     padding: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
     ...(uielem.options || {})
   }
@@ -443,12 +447,16 @@ const onCanvasDrop = (event) => {
   let elementToInsert
   if (item.source === 'palette') {
     if (['VerticalLayout', 'HorizontalLayout', 'Group'].includes(item.type)) {
+      const margin = item.type === 'Group'
+        ? { top: '10px', right: '15px', bottom: '10px', left: '15px' }
+        : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+
       elementToInsert = {
         type: item.type,
         label: item.label,
         elements: [],
         options: {
-          margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+          margin,
           padding: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
         }
       }
