@@ -110,5 +110,22 @@ html, body, #app {
   .no-print {
     display: none !important;
   }
+
+  html, body, #app, .app-container, .el-main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .app-container, .el-main {
+    display: block !important;
+  }
+
+  .vertical-layout {
+    display: block !important;
+  }
+
+  .layout-item {
+    page-break-inside: avoid;
+  }
 }
 </style>

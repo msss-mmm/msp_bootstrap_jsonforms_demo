@@ -335,12 +335,18 @@ onMounted(fetchDoc)
 
   .document-edit {
     padding: 0;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
   }
 
   .form-container {
     margin-top: 0;
     box-shadow: none;
     padding: 0;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
   }
 }
 </style>
