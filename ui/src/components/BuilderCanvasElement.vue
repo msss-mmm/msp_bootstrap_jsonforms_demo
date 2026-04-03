@@ -321,6 +321,7 @@ const onClick = () => {
   animation: ghost-pulse 1.5s infinite;
   width: 100%;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .drag-ghost.horizontal-ghost {
@@ -348,14 +349,6 @@ const onClick = () => {
 }
 
 .control-container.is-interactive {
-  pointer-events: all;
-}
-
-.builder-canvas-element:not(.is-layout) {
-  pointer-events: none;
-}
-
-.builder-canvas-element:not(.is-layout) :deep(*) {
   pointer-events: all;
 }
 </style>
