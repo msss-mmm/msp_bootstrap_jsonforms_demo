@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
@@ -10,6 +11,7 @@ export default defineConfig(({ mode }) => {
     ...process.env,
     ...loadEnv(mode, '../', '')
   }
+
 
   return {
     envDir: '../',
@@ -36,6 +38,19 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^.*\/api/, '/api')
         }
       }
+    },
+
+    // For Chrome Vue extension
+    define: {
+      __VUE_PROD_DEVTOOLS__: true,
+    },
+
+    // sourcemaps
+    build: {
+      sourcemap: true, // Set to true to generate source maps for production builds
+    },
+    css: {
+      devSourcemap: true // Useful for debugging CSS/Sass in Vue files
     }
   }
 })

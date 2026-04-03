@@ -188,10 +188,9 @@ const fetchDoc = async () => {
           finalData[key] = properties[key].default
         }
       })
-      formData.value = defaults
 
       // Handle Mixture Record Number population
-      await handleMixtureRecordNumber(templateRes.data.uischema, defaults)
+      await handleMixtureRecordNumber(templateRes.data.uischema, finalData)
     } else {
       finalData = JSON.parse(JSON.stringify(currentData))
     }
