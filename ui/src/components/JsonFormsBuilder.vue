@@ -88,6 +88,15 @@
               <el-input v-model="selectedItem.description" @input="updateSchema" />
             </el-form-item>
 
+            <el-form-item v-if="selectedItem.options.type === 'Title'" label="Title Variant">
+              <el-select v-model="selectedItem.options.variant" @change="updateUiSchema" style="width: 100%" size="small">
+                <el-option label="H1 (Heading 1)" value="h1" />
+                <el-option label="H2 (Heading 2)" value="h2" />
+                <el-option label="H3 (Heading 3)" value="h3" />
+                <el-option label="H4 (Heading 4)" value="h4" />
+              </el-select>
+            </el-form-item>
+
             <template v-if="selectedItem.options.format === 'radio' || selectedItem.options.format === 'multi-select'">
               <el-divider>Options</el-divider>
               <div v-for="(opt, idx) in selectedItem.enum" :key="idx" style="display: flex; gap: 5px; margin-bottom: 5px;">
@@ -186,7 +195,8 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import BuilderCanvasElement from './BuilderCanvasElement.vue'
 import BoxModelEditor from './BoxModelEditor.vue'
-import { Edit, Document, Check, Calendar, Timer, AlarmClock, Delete, Connection, Menu, List, CircleCheck, Finished, Plus } from '@element-plus/icons-vue'
+import { Edit, Document, Check, Calendar, Timer, AlarmClock, Delete, Connection, Menu, List, CircleCheck, Finished, Plus, Trophy, CollectionTag } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   schema: { type: Object, required: true },
@@ -293,6 +303,8 @@ const controlItems = [
   { label: 'Multi-select', type: 'array', options: { format: 'multi-select' }, icon: 'Finished' },
   { label: 'Timer', type: 'object', options: { type: 'Timer' }, icon: 'AlarmClock' },
   { label: 'External Capture', type: 'object', options: { type: 'ExternalCapture' }, icon: 'Download' },
+  { label: 'Title', type: 'string', options: { type: 'Title' }, icon: 'Trophy' },
+  { label: 'Document Type', type: 'string', options: { type: 'DocumentType' }, icon: 'CollectionTag' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
   { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' }
 ]
@@ -381,6 +393,19 @@ const onCanvasDrop = (event) => {
   if (!draggedItem.value) return
 
   const item = draggedItem.value
+
+  // Uniqueness check for Document Type
+  if (item.source === 'palette' && item.options?.type === 'DocumentType') {
+    const existing = JSON.stringify(props.uischema).includes('"type":"DocumentType"')
+    if (existing) {
+      ElMessage.warning('Only one Document Type field is allowed per template.')
+      isDragging.value = false
+      draggedItem.value = null
+      draggedOverPath.value = null
+      return
+    }
+  }
+
   const newUiSchema = JSON.parse(JSON.stringify(props.uischema))
   const newSchema = JSON.parse(JSON.stringify(props.schema))
 
@@ -429,11 +454,23 @@ const onCanvasDrop = (event) => {
           newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
         }
       }
+
+      // Title & Document Type defaults
+      if (item.options?.type === 'Title') {
+        newSchema.properties[id].readOnly = true
+      } else if (item.options?.type === 'DocumentType') {
+        newSchema.properties[id].readOnly = true
+      }
+
       elementToInsert = {
         type: 'Control',
         scope: `#/properties/${id}`,
         label: item.label,
         options: item.options ? { ...item.options } : {}
+      }
+
+      if (item.options?.type === 'Title') {
+        elementToInsert.options.variant = 'h1'
       }
       if (item.options?.format === 'radio' || item.options?.format === 'multi-select') {
         if (!elementToInsert.options) elementToInsert.options = {}
