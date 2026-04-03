@@ -127,5 +127,26 @@ html, body, #app {
   .layout-item {
     page-break-inside: avoid;
   }
+
+  /* High contrast for form elements in print */
+  .el-input__inner, .el-textarea__inner {
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important;
+    font-weight: 400 !important; /* Normal weight for values in print per feedback */
+  }
+
+  .el-checkbox__label, .el-radio__label {
+    color: #000 !important;
+  }
+
+  .el-checkbox__inner, .el-radio__inner {
+    border-color: #000 !important;
+  }
+
+  .el-checkbox.is-checked .el-checkbox__inner,
+  .el-radio.is-checked .el-radio__inner {
+    background-color: #000 !important;
+    border-color: #000 !important;
+  }
 }
 </style>
