@@ -48,3 +48,6 @@ pip-delete-this-bin.txt
 
 # Logs
 *.log
+
+# test crumbs
+test-results/
