@@ -116,8 +116,16 @@ html, body, #app {
     overflow: visible !important;
   }
 
-  .app-container {
+  .app-container, .el-main {
     display: block !important;
+  }
+
+  .vertical-layout {
+    display: block !important;
+  }
+
+  .layout-item {
+    page-break-inside: avoid;
   }
 }
 </style>
