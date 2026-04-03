@@ -113,10 +113,15 @@
               </el-form-item>
             </template>
 
-            <el-form-item>
+            <el-form-item v-if="selectedItem.format === 'date'">
+              <el-checkbox :model-value="selectedItem.options?.isCreationDate" @change="handleCreationDateChange">Document Creation Date</el-checkbox>
+            </el-form-item>
+
+            <el-form-item v-if="!selectedItem.options?.isCreationDate">
               <el-checkbox v-model="selectedItem.readOnly" @change="updateSchema">Read Only</el-checkbox>
             </el-form-item>
-            <el-form-item>
+
+            <el-form-item v-if="!selectedItem.options?.isCreationDate">
               <template #label>
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                   <span>{{ selectedItem.readOnly ? 'Constant Value' : 'Default Value' }}</span>
@@ -133,7 +138,7 @@
                 <el-input v-else-if="selectedItem.type === 'string' && !selectedItem.format" v-model="selectedItem.default" @input="updateSchema" />
                 <el-input-number v-else-if="selectedItem.type === 'number'" v-model="selectedItem.default" @change="updateSchema" style="width: 100%" />
                 <el-checkbox v-else-if="selectedItem.type === 'boolean'" v-model="selectedItem.default" @change="updateSchema">Active</el-checkbox>
-                <el-date-picker v-else-if="selectedItem.format === 'date'" v-model="selectedItem.default" type="date" value-format="YYYY-MM-DD" placeholder="YYYY:MM:DD" @change="updateSchema" style="width: 100%" />
+                <el-date-picker v-else-if="selectedItem.format === 'date'" v-model="selectedItem.default" type="date" value-format="YYYY-MM-DD" placeholder="YYYY-MM-DD" @change="updateSchema" style="width: 100%" />
                 <el-time-picker v-else-if="selectedItem.format === 'time'" v-model="selectedItem.default" value-format="HH:mm:ss" placeholder="HH:MM:SS" @change="updateSchema" style="width: 100%" />
                 <el-input v-else v-model="selectedItem.default" @input="updateSchema" />
               </template>
@@ -706,6 +711,32 @@ const updateSchema = () => {
 
   newSchema.properties[fieldId] = currentProps
   emit('update:schema', newSchema)
+  emit('change')
+}
+
+const handleCreationDateChange = (val) => {
+  const uielem = getElementByPath(selectedPath.value)
+  if (!uielem || !uielem.scope) return
+  const fieldId = uielem.scope.split('/').pop()
+
+  const newSchema = JSON.parse(JSON.stringify(props.schema))
+  const newUiSchema = JSON.parse(JSON.stringify(props.uischema))
+  const targetUi = getElementByPathInTree(newUiSchema, selectedPath.value)
+
+  if (val) {
+    newSchema.properties[fieldId].readOnly = true
+    delete newSchema.properties[fieldId].default
+    if (!targetUi.options) targetUi.options = {}
+    targetUi.options.isCreationDate = true
+  } else {
+    if (targetUi.options) {
+      targetUi.options.isCreationDate = false
+    }
+    newSchema.properties[fieldId].readOnly = false
+  }
+
+  emit('update:schema', newSchema)
+  emit('update:uischema', newUiSchema)
   emit('change')
 }
 
