@@ -27,7 +27,8 @@ const props = defineProps({
   type: {
     type: String,
     default: 'string'
-  }
+  },
+  placeholder: String
 })
 
 const isEmpty = computed(() => {
@@ -36,7 +37,7 @@ const isEmpty = computed(() => {
 
 const formattedValue = computed(() => {
   if (isEmpty.value) {
-    return '—'
+    return props.placeholder || '—'
   }
   if (Array.isArray(props.modelValue)) {
     return props.modelValue.join(', ')

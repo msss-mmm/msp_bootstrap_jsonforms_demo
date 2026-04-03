@@ -10,7 +10,7 @@
       :model-value="control.data"
       type="date"
       value-format="YYYY-MM-DD"
-      :placeholder="control.uischema.options?.placeholder || 'YYYY:MM:DD'"
+      :placeholder="control.uischema.options?.placeholder || 'YYYY-MM-DD'"
       :disabled="!control.enabled"
       @update:model-value="val => handleChange(control.path, val)"
       style="width: 100%"
@@ -21,6 +21,7 @@
     :label="control.label"
     :model-value="control.data"
     type="date"
+    :placeholder="control.uischema.options?.placeholder || 'YYYY-MM-DD'"
   />
 </template>
 

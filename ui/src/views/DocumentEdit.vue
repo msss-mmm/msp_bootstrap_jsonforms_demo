@@ -162,14 +162,30 @@ const fetchDoc = async () => {
       template_uischema: templateRes.data.uischema || { type: 'VerticalLayout', elements: [] }
     }
 
-    // Pre-populate defaults for new documents (empty data)
+    // Pre-populate defaults and creation date fields
     const currentData = res.data.data || {}
-    if (Object.keys(currentData).length === 0) {
-      const defaults = {}
-      const properties = templateRes.data.schema.properties || {}
+    const isNew = Object.keys(currentData).length === 0
+    const properties = templateRes.data.schema.properties || {}
+    const uischema = templateRes.data.uischema || {}
+
+    // Function to find all creation date field names from uischema
+    const creationDateFields = []
+    const findCreationDateFields = (element) => {
+      if (!element) return
+      if (element.type === 'Control' && element.options?.isCreationDate && element.scope) {
+        creationDateFields.push(element.scope.split('/').pop())
+      }
+      if (element.elements) {
+        element.elements.forEach(findCreationDateFields)
+      }
+    }
+    findCreationDateFields(uischema)
+
+    let finalData = {}
+    if (isNew) {
       Object.keys(properties).forEach(key => {
         if (properties[key].default !== undefined) {
-          defaults[key] = properties[key].default
+          finalData[key] = properties[key].default
         }
       })
       formData.value = defaults
@@ -177,8 +193,23 @@ const fetchDoc = async () => {
       // Handle Mixture Record Number population
       await handleMixtureRecordNumber(templateRes.data.uischema, defaults)
     } else {
-      formData.value = JSON.parse(JSON.stringify(currentData))
+      finalData = JSON.parse(JSON.stringify(currentData))
     }
+
+    // Always set creation date fields if they are missing or if it's a new document
+    // We use the document's created_at from the backend
+    if (res.data.created_at) {
+      const creationDate = res.data.created_at.split('T')[0] // YYYY-MM-DD
+      creationDateFields.forEach(field => {
+        // Only set it if it's not already set to something else, or if it's a new document
+        // This handles cases where a field is added to an existing template later.
+        if (isNew || !finalData[field]) {
+          finalData[field] = creationDate
+        }
+      })
+    }
+
+    formData.value = finalData
 
     initialFormData.value = JSON.parse(JSON.stringify(formData.value))
 
