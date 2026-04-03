@@ -52,10 +52,11 @@ const formattedValue = computed(() => {
 }
 
 .field-label {
-  font-size: 14px;
-  color: #606266;
+  display: block;
   margin-bottom: 8px;
+  color: #606266;
   font-weight: 700;
+  font-size: 14px;
   line-height: 1.4;
 }
 
@@ -66,6 +67,8 @@ const formattedValue = computed(() => {
   min-height: 32px;
   display: flex;
   align-items: center;
+  padding: 1px 11px; /* Matches el-input horizontal padding roughly */
+  line-height: 1.4;
 }
 
 .boolean-display {
@@ -74,9 +77,9 @@ const formattedValue = computed(() => {
 }
 
 .checkbox-mock {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+  width: 14px; /* Matches el-checkbox size closer */
+  height: 14px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,18 +88,18 @@ const formattedValue = computed(() => {
 .checkbox-mock.is-checked {
   background-color: #409eff;
   color: #fff;
-  border: 2px solid #409eff;
+  border: 1px solid #409eff;
 }
 
 .checkbox-mock.is-unchecked {
   background-color: #fff;
-  border: 2px solid #dcdfe6;
+  border: 1px solid #dcdfe6;
   color: #dcdfe6;
 }
 
 @media print {
   .field-label, .field-value {
-    color: #000;
+    color: #000 !important;
   }
   .checkbox-mock.is-checked {
     background-color: #000 !important;

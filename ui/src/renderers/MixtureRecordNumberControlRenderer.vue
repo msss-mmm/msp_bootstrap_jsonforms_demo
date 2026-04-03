@@ -1,12 +1,15 @@
 <template>
-  <div class="mixture-record-number-control">
-    <span class="mrn-label">Mixture Record Number: </span>
-    <span class="mrn-value">{{ control.data || '—' }}</span>
-  </div>
+  <read-only-field
+    :label="'Mixture Record Number'"
+    :model-value="control.data"
+    type="string"
+    class="mixture-record-number-control"
+  />
 </template>
 
 <script setup>
 import { rendererProps, useJsonFormsControl } from '@jsonforms/vue'
+import ReadOnlyField from '../components/ReadOnlyField.vue'
 
 const props = defineProps({
   ...rendererProps()
@@ -16,30 +19,13 @@ const { control } = useJsonFormsControl(props)
 </script>
 
 <style scoped>
-.mixture-record-number-control {
-  font-size: 14px;
-  color: #606266;
-  margin-bottom: 10px;
-  font-weight: 700;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-}
-
-.mrn-label {
-  margin-right: 5px;
-}
-
-.mrn-value {
+:deep(.field-value) {
   color: #409eff;
 }
 
 @media print {
-  .mixture-record-number-control {
-    color: #000;
-  }
-  .mrn-value {
-    color: #000;
+  :deep(.field-value) {
+    color: #000 !important;
   }
 }
 </style>
