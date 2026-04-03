@@ -370,10 +370,24 @@ const onDragOverUpdate = (info) => {
 
 const onCanvasDragOver = (event) => {
   if (!isDragging.value) return
+
+  // event.currentTarget is the '.canvas' div because it has @dragover
+  // event.target is whatever is under the mouse.
+
   // If we are over the general canvas area but NOT over an element
   if (event.target.classList.contains('canvas-content')) {
-    draggedOverPath.value = null
-    dropPosition.value = 'bottom'
+    const rect = event.target.getBoundingClientRect()
+    const relativeY = event.clientY - rect.top
+
+    // If mouse is in the very top part of the canvas (e.g., top 60px padding area)
+    // and there are already elements, target the first one with 'top' position
+    if (relativeY < 60 && props.uischema.elements.length > 0) {
+      draggedOverPath.value = [0]
+      dropPosition.value = 'top'
+    } else {
+      draggedOverPath.value = null
+      dropPosition.value = 'bottom'
+    }
   }
 }
 
@@ -786,6 +800,7 @@ const clearForm = () => {
   border-radius: 2px;
   margin: 10px 0;
   position: relative;
+  pointer-events: none;
 }
 
 .drag-ghost::before {
@@ -808,6 +823,7 @@ const clearForm = () => {
   align-items: center;
   justify-content: center;
   color: #409eff;
+  pointer-events: none;
 }
 
 .is-dragging-over {
