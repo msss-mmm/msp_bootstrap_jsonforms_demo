@@ -110,5 +110,14 @@ html, body, #app {
   .no-print {
     display: none !important;
   }
+
+  html, body, #app, .app-container, .el-main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .app-container {
+    display: block !important;
+  }
 }
 </style>
