@@ -84,8 +84,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
-ADDITIONAL_FRONTEND_URLS = os.environ.get('ADDITIONAL_FRONTEND_URLS', '').split(',')
+# When running in Docker, internal service name 'ui' should be used for PDF rendering.
+if os.path.exists('/.dockerenv'):
+    DEFAULT_FRONTEND_URL = 'http://ui'
+else:
+    DEFAULT_FRONTEND_URL = 'http://localhost:5173'
+
+FRONTEND_URL = os.environ.get('FRONTEND_URL', DEFAULT_FRONTEND_URL)
 
 # Handle being behind a reverse proxy
 USE_X_FORWARDED_HOST = True

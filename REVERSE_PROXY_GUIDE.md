@@ -36,26 +36,20 @@ This configuration allows you to host the *same* Docker container in multiple en
 
 No rebuild or `.env` changes are required when moving between these locations!
 
-## PDF Generation & Whitelisted URLs
+## PDF Generation
 
-The "Save to PDF" feature uses a headless browser on the backend to render the document. For security, the backend only visits whitelisted URLs.
+The "Save to PDF" feature uses a headless browser on the backend to render the document.
 
 ### Internal Docker Networking
 
-When running in Docker, `localhost` or `127.0.0.1` refers to the *backend* container itself. If the client is visiting the app through an SSH tunnel (e.g., `http://localhost:2001`), the backend cannot reach that address.
+The backend is configured to use an internal service URL for rendering to ensure reliable communication within the Docker network. By default, it uses `http://ui` when running in Docker, which points directly to the frontend container.
 
-To solve this, the backend **automatically translates** any `localhost` or `127.0.0.1` base URL to the internal Docker service name `http://ui` when it detects it's running in a container. This ensures that the PDF renderer correctly connects to the frontend container over the internal network.
+This bypasses any external networking issues (like SSH tunnels or complex reverse proxy setups) because the rendering process stays within the internal Docker network.
 
-### Custom Whitelists
+### Configuration
 
-If you are using a non-standard port or hostname that is not in the default whitelist, you must add it to the `ADDITIONAL_FRONTEND_URLS` environment variable:
+If you need to change the base URL used for PDF rendering, you can set the `FRONTEND_URL` environment variable for the `api` service.
 
 ```bash
-ADDITIONAL_FRONTEND_URLS=http://my-proxy:8080
+FRONTEND_URL=http://ui
 ```
-
-The following are whitelisted by default:
-- The `FRONTEND_URL` setting (default: `http://localhost:5173`)
-- `http://localhost:5173`, `http://127.0.0.1:5173`
-- `http://localhost:2001`, `http://127.0.0.1:2001`
-- `http://ui`

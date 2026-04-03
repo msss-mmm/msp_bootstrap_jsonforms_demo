@@ -216,9 +216,8 @@ const printDocument = () => {
 
 const savePdfToServer = async () => {
   try {
-    await axios.post(`${store.apiUrl}/documents/${route.params.id}/save_pdf/`, {
-      base_url: window.location.origin
-    })
+    // The backend now uses a pre-configured FRONTEND_URL, so we don't need to pass base_url.
+    await axios.post(`${store.apiUrl}/documents/${route.params.id}/save_pdf/`)
     ElMessage.success('PDF saved to server (api/pdfs)')
   } catch (error) {
     console.error(error)
