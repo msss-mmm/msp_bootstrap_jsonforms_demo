@@ -310,6 +310,7 @@ const controlItems = [
   { label: 'External Capture', type: 'object', options: { type: 'ExternalCapture' }, icon: 'Download' },
   { label: 'Title', type: 'string', options: { type: 'Title' }, icon: 'Trophy' },
   { label: 'Document Type', type: 'string', options: { type: 'DocumentType' }, icon: 'CollectionTag' },
+  { label: 'Mixture Record Number', type: 'string', options: { type: 'MixtureRecordNumber' }, icon: 'List' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
   { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' }
 ]
@@ -424,6 +425,17 @@ const onCanvasDrop = (event) => {
       return
     }
   }
+  // Uniqueness check for Mixture Record Number
+  if (item.source === 'palette' && item.options?.type === 'MixtureRecordNumber') {
+    const existing = JSON.stringify(props.uischema).includes('"type":"MixtureRecordNumber"')
+    if (existing) {
+      ElMessage.warning('Only one Mixture Record Number field is allowed per template.')
+      isDragging.value = false
+      draggedItem.value = null
+      draggedOverPath.value = null
+      return
+    }
+  }
 
   const newUiSchema = JSON.parse(JSON.stringify(props.uischema))
   const newSchema = JSON.parse(JSON.stringify(props.schema))
@@ -474,10 +486,12 @@ const onCanvasDrop = (event) => {
         }
       }
 
-      // Title & Document Type defaults
+      // Title, Document Type & MRN defaults
       if (item.options?.type === 'Title') {
         newSchema.properties[id].readOnly = true
       } else if (item.options?.type === 'DocumentType') {
+        newSchema.properties[id].readOnly = true
+      } else if (item.options?.type === 'MixtureRecordNumber') {
         newSchema.properties[id].readOnly = true
       }
 

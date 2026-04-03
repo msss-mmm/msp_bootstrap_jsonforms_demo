@@ -188,6 +188,10 @@ const fetchDoc = async () => {
           finalData[key] = properties[key].default
         }
       })
+      formData.value = defaults
+
+      // Handle Mixture Record Number population
+      await handleMixtureRecordNumber(templateRes.data.uischema, defaults)
     } else {
       finalData = JSON.parse(JSON.stringify(currentData))
     }
@@ -281,6 +285,55 @@ const lockDocument = async () => {
   } catch (error) {
     console.error(error)
     ElMessage.error('Failed to lock document')
+  }
+}
+
+const handleMixtureRecordNumber = async (uischema, currentData) => {
+  const findElementByType = (elements, type) => {
+    for (const el of elements) {
+      if (el.options?.type === type) return el
+      if (el.elements) {
+        const found = findElementByType(el.elements, type)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  const docTypeEl = findElementByType(uischema.elements || [], 'DocumentType')
+  const mrnEl = findElementByType(uischema.elements || [], 'MixtureRecordNumber')
+
+  if (docTypeEl && mrnEl) {
+    const docTypeFieldId = docTypeEl.scope.split('/').pop()
+    const mrnFieldId = mrnEl.scope.split('/').pop()
+    const docTypeValue = currentData[docTypeFieldId] || docTypeEl.label || 'N/A'
+
+    // Format date as YYMMDD
+    const now = new Date()
+    const yy = String(now.getFullYear()).slice(-2)
+    const mm = String(now.getMonth() + 1).padStart(2, '0')
+    const dd = String(now.getDate()).padStart(2, '0')
+    const datePrefix = `${yy}${mm}${dd}`
+
+    try {
+      const res = await axios.post(`${store.apiUrl}/documents/${route.params.id}/claim_mixture_record/`, {
+        date_prefix: datePrefix,
+        document_type: docTypeValue,
+        field_id: mrnFieldId,
+        data: currentData
+      })
+
+      if (res.data.mrn) {
+        formData.value = {
+          ...formData.value,
+          [mrnFieldId]: res.data.mrn
+        }
+        hasChanges.value = false // Already saved by backend
+      }
+    } catch (error) {
+      console.error('Failed to claim mixture record number:', error)
+      ElMessage.error('Failed to generate Mixture Record Number')
+    }
   }
 }
 
