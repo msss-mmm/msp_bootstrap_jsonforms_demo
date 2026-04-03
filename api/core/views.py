@@ -20,28 +20,9 @@ class DocumentInstanceViewSet(viewsets.ModelViewSet):
     def save_pdf(self, request, pk=None):
         instance = self.get_object()
 
-        # Security: Construct the frontend URL using a whitelisted base to prevent SSRF.
-        client_base_url = request.data.get('base_url', '').rstrip('/')
-        whitelisted_bases = [
-            settings.FRONTEND_URL.rstrip('/'),
-            'http://localhost:5173',
-            'http://ui', # standard for docker-compose based networking
-            'http://127.0.0.1:5173',
-            'http://localhost:2001', # SSH tunnel support
-            'http://127.0.0.1:2001',
-        ] + [url.rstrip('/') for url in settings.ADDITIONAL_FRONTEND_URLS if url]
-
-        if client_base_url and client_base_url not in whitelisted_bases:
-             return Response({"error": f"Base URL {client_base_url} is not whitelisted"}, status=status.HTTP_400_BAD_REQUEST)
-
-        base_url = client_base_url if client_base_url else settings.FRONTEND_URL.rstrip('/')
-
-        # Network routing logic for Docker: 'localhost' in a container refers to itself.
-        # We must route to 'http://ui' internally to reach the frontend container.
-        if os.path.exists('/.dockerenv') and ('localhost' in base_url or '127.0.0.1' in base_url):
-             # Replace the host and port with the internal service name 'ui'
-             base_url = re.sub(r'(https?://)?localhost(:\d+)?', r'\1ui', base_url)
-             base_url = re.sub(r'(https?://)?127\.0\.0\.1(:\d+)?', r'\1ui', base_url)
+        # Security: The backend strictly uses the pre-configured FRONTEND_URL.
+        # In Docker, this defaults to 'http://ui' to reach the frontend container.
+        base_url = settings.FRONTEND_URL.rstrip('/')
 
         # Note: We append a mock user query param in case future auth needs it.
         # In current setup, the app is open-access for rendering.
