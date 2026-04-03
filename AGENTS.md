@@ -1,5 +1,7 @@
 # System Specification: Manufacturing Execution & Document Pipeline
 
+For detailed technical implementation details, architecture, and behavioral requirements, refer to [DESIGN.md](./DESIGN.md).
+
 ## Overview
 This document specifies the requirements for a Document Management System (DMS) designed to transition from paper-based workflows to a secure, multi-user digital platform. The system utilizes a dynamic, schema-driven approach to manage document templates and their resulting instances.
 
