@@ -180,6 +180,8 @@
           <box-model-editor
             v-model:margin="selectedItem.options.margin"
             v-model:padding="selectedItem.options.padding"
+            :default-margin="selectedItem.defaultMargin"
+            :default-padding="selectedItem.defaultPadding"
             @update:margin="updateUiSchema"
             @update:padding="updateUiSchema"
           />
@@ -348,9 +350,17 @@ const selectedItem = computed(() => {
   const fieldId = isControl && uielem.scope ? uielem.scope.split('/').pop() : ''
   const schelem = isControl ? (props.schema?.properties?.[fieldId] || {}) : {}
 
+  const defaultMargin = uielem.type === 'Group'
+    ? { top: '10px', right: '15px', bottom: '10px', left: '15px' }
+    : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+
+  const defaultPadding = uielem.type === 'Group'
+    ? { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+    : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+
   const options = {
-    margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
-    padding: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+    margin: uielem.options?.margin || {},
+    padding: uielem.options?.padding || {},
     ...(uielem.options || {})
   }
 
@@ -367,7 +377,9 @@ const selectedItem = computed(() => {
     hasDefault: schelem.default !== undefined,
     readOnly: schelem.readOnly || false,
     enum: enums,
-    options
+    options,
+    defaultMargin,
+    defaultPadding
   }
 })
 
@@ -443,12 +455,16 @@ const onCanvasDrop = (event) => {
   let elementToInsert
   if (item.source === 'palette') {
     if (['VerticalLayout', 'HorizontalLayout', 'Group'].includes(item.type)) {
+      const margin = item.type === 'Group'
+        ? { top: '10px', right: '15px', bottom: '10px', left: '15px' }
+        : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+
       elementToInsert = {
         type: item.type,
         label: item.label,
         elements: [],
         options: {
-          margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+          margin,
           padding: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
         }
       }
