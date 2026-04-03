@@ -132,6 +132,7 @@ html, body, #app {
   .el-input__inner, .el-textarea__inner {
     color: #000 !important;
     -webkit-text-fill-color: #000 !important;
+    font-weight: 400 !important; /* Normal weight for values in print per feedback */
   }
 
   .el-checkbox__label, .el-radio__label {

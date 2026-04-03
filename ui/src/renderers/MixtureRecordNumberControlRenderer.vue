@@ -3,7 +3,7 @@
     :label="'Mixture Record Number'"
     :model-value="control.data"
     type="string"
-    class="mixture-record-number-control"
+    custom-class="mixture-record-number-control"
   />
 </template>
 
@@ -19,13 +19,5 @@ const { control } = useJsonFormsControl(props)
 </script>
 
 <style scoped>
-:deep(.field-value) {
-  color: #409eff;
-}
-
-@media print {
-  :deep(.field-value) {
-    color: #000 !important;
-  }
-}
+/* Scoped style specifically for MRN if not already handled by custom-class */
 </style>
