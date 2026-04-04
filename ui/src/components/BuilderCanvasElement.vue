@@ -227,7 +227,7 @@ const onDragOver = (event) => {
         })
 
         // If we are very close to a child's edge, target that gap
-        if (minDistance < 20) {
+        if (minDistance < 30) {
           emit('drag-over-update', { path: [...props.path, closestIndex], position: pos })
           return
         }

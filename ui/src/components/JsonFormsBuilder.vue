@@ -292,6 +292,7 @@ const draggedItem = ref(null)
 const draggedOverPath = ref(null)
 const dropPosition = ref('bottom')
 const lastTarget = ref(null)
+const pendingTarget = ref(null)
 let debounceTimer = null
 
 const isDraggingOverRoot = computed(() => isDragging.value && (draggedOverPath.value === null))
@@ -405,19 +406,42 @@ const onMoveStart = (info) => {
   }
 }
 
+const isSameZone = (a, b) => {
+  if (a === b) return true
+  if (!a || !b) return false
+  if (JSON.stringify(a.path) === JSON.stringify(b.path) && a.position === b.position) return true
+
+  // Normalize and compare (treat bottom of i as top of i+1)
+  const norm = (val) => {
+    if (!val.path || val.position === 'inside') return val
+    if (val.position === 'bottom') {
+      const p = [...val.path]
+      p[p.length - 1]++
+      return { path: p, position: 'top' }
+    }
+    return val
+  }
+
+  const na = norm(a)
+  const nb = norm(b)
+  return JSON.stringify(na.path) === JSON.stringify(nb.path) && na.position === nb.position
+}
+
 const onDragOverUpdate = (info) => {
   lastTarget.value = info
 
-  // If no ghost is currently shown, show the first one immediately to avoid lag feeling on start
-  if (draggedOverPath.value === null && !debounceTimer) {
+  // If no ghost is currently shown, show it immediately for responsiveness
+  if (draggedOverPath.value === null) {
     draggedOverPath.value = info.path
     dropPosition.value = info.position
+    pendingTarget.value = null
+    if (debounceTimer) clearTimeout(debounceTimer)
     return
   }
 
-  // If the target hasn't changed, clear any pending timer
-  if (JSON.stringify(info.path) === JSON.stringify(draggedOverPath.value) &&
-      info.position === dropPosition.value) {
+  // Check if this new info matches what we are ALREADY showing
+  if (isSameZone(info, { path: draggedOverPath.value, position: dropPosition.value })) {
+    pendingTarget.value = null
     if (debounceTimer) {
       clearTimeout(debounceTimer)
       debounceTimer = null
@@ -425,11 +449,21 @@ const onDragOverUpdate = (info) => {
     return
   }
 
-  // If target changed, debounce the ghost update to prevent jitter
+  // Check if this matches our PENDING target
+  if (isSameZone(info, pendingTarget.value)) {
+    // Already waiting for this one, don't restart the timer
+    return
+  }
+
+  // New zone detected, start/restart the 400ms "settle" timer
+  pendingTarget.value = info
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    draggedOverPath.value = info.path
-    dropPosition.value = info.position
+    if (pendingTarget.value) {
+      draggedOverPath.value = pendingTarget.value.path
+      dropPosition.value = pendingTarget.value.position
+      pendingTarget.value = null
+    }
     debounceTimer = null
   }, 400)
 }
