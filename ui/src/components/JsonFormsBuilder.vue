@@ -302,8 +302,11 @@ const isDragging = ref(false)
 const draggedItem = ref(null)
 const draggedOverPath = ref(null)
 const dropPosition = ref('bottom')
+const lastTarget = ref(null)
+const pendingTarget = ref(null)
+let debounceTimer = null
 
-const isDraggingOverRoot = computed(() => isDragging.value && draggedOverPath.value === null)
+const isDraggingOverRoot = computed(() => isDragging.value && (draggedOverPath.value === null))
 
 const layoutItems = [
   { label: 'Vertical Layout', type: 'VerticalLayout', icon: 'Menu' },
@@ -397,45 +400,148 @@ const selectedItem = computed(() => {
 const onDragStartPalette = (event, item) => {
   isDragging.value = true
   draggedItem.value = { ...item, source: 'palette' }
+  lastTarget.value = null
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
 }
 
 const onMoveStart = (info) => {
   isDragging.value = true
   draggedItem.value = info
+  lastTarget.value = null
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+}
+
+const isSameZone = (a, b) => {
+  if (a === b) return true
+  if (!a || !b) return false
+  if (JSON.stringify(a.path) === JSON.stringify(b.path) && a.position === b.position) return true
+
+  // Normalize and compare (treat bottom of i as top of i+1)
+  const norm = (val) => {
+    if (!val.path || val.position === 'inside') return val
+    if (val.position === 'bottom') {
+      const p = [...val.path]
+      p[p.length - 1]++
+      return { path: p, position: 'top' }
+    }
+    return val
+  }
+
+  const na = norm(a)
+  const nb = norm(b)
+  return JSON.stringify(na.path) === JSON.stringify(nb.path) && na.position === nb.position
 }
 
 const onDragOverUpdate = (info) => {
-  draggedOverPath.value = info.path
-  dropPosition.value = info.position
+  lastTarget.value = info
+
+  // If no ghost is currently shown, show it immediately for responsiveness
+  if (draggedOverPath.value === null) {
+    draggedOverPath.value = info.path
+    dropPosition.value = info.position
+    pendingTarget.value = null
+    if (debounceTimer) clearTimeout(debounceTimer)
+    return
+  }
+
+  // Check if this new info matches what we are ALREADY showing
+  if (isSameZone(info, { path: draggedOverPath.value, position: dropPosition.value })) {
+    pendingTarget.value = null
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
+    return
+  }
+
+  // Check if this matches our PENDING target
+  if (isSameZone(info, pendingTarget.value)) {
+    // Already waiting for this one, don't restart the timer
+    return
+  }
+
+  // New zone detected, start/restart the 400ms "settle" timer
+  pendingTarget.value = info
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    if (pendingTarget.value) {
+      draggedOverPath.value = pendingTarget.value.path
+      dropPosition.value = pendingTarget.value.position
+      pendingTarget.value = null
+    }
+    debounceTimer = null
+  }, 400)
 }
 
 const onCanvasDragOver = (event) => {
   if (!isDragging.value) return
 
-  // event.currentTarget is the '.canvas' div because it has @dragover
-  // event.target is whatever is under the mouse.
+  const canvasContent = event.currentTarget.querySelector('.canvas-content')
+  if (!canvasContent) return
 
-  // If we are over the general canvas area but NOT over an element
-  if (event.target.classList.contains('canvas-content')) {
-    const rect = event.target.getBoundingClientRect()
-    const relativeY = event.clientY - rect.top
+  const rect = canvasContent.getBoundingClientRect()
+  if (event.clientX < rect.left || event.clientX > rect.right ||
+      event.clientY < rect.top || event.clientY > rect.bottom) {
+    return
+  }
 
-    // If mouse is in the very top part of the canvas (e.g., top 60px padding area)
-    // and there are already elements, target the first one with 'top' position
-    if (relativeY < 60 && props.uischema.elements.length > 0) {
-      draggedOverPath.value = [0]
-      dropPosition.value = 'top'
-    } else {
-      draggedOverPath.value = null
-      dropPosition.value = 'bottom'
+  const relativeY = event.clientY - rect.top
+
+  // Very top area (padding)
+  if (relativeY < 40 && props.uischema.elements.length > 0) {
+    onDragOverUpdate({ path: [0], position: 'top' })
+    return
+  }
+
+  // Find closest root element for gap dropping
+  const children = Array.from(canvasContent.children).filter(c => c.classList.contains('builder-canvas-element'))
+  if (children.length > 0) {
+    let closestIndex = -1
+    let minDistance = Infinity
+    let position = 'bottom'
+
+    children.forEach((child, index) => {
+      const cRect = child.getBoundingClientRect()
+      const dTop = Math.abs(event.clientY - cRect.top)
+      const dBottom = Math.abs(event.clientY - cRect.bottom)
+
+      if (dTop < minDistance) {
+        minDistance = dTop
+        closestIndex = index
+        position = 'top'
+      }
+      if (dBottom < minDistance) {
+        minDistance = dBottom
+        closestIndex = index
+        position = 'bottom'
+      }
+    })
+
+    if (closestIndex !== -1) {
+      onDragOverUpdate({ path: [closestIndex], position })
+      return
     }
   }
+
+  onDragOverUpdate({ path: null, position: 'bottom' })
 }
 
 const onCanvasDrop = (event) => {
   if (!draggedItem.value) return
 
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+
   const item = draggedItem.value
+  const dropInfo = lastTarget.value || { path: draggedOverPath.value, position: dropPosition.value }
 
   // Uniqueness check for Document Type
   if (item.source === 'palette' && item.options?.type === 'DocumentType') {
@@ -559,49 +665,50 @@ const onCanvasDrop = (event) => {
       return true
     }
 
-    if (draggedOverPath.value && isDescendant(item.path, draggedOverPath.value)) {
+    if (dropInfo.path && isDescendant(item.path, dropInfo.path)) {
       isDragging.value = false
       draggedItem.value = null
       draggedOverPath.value = null
+      lastTarget.value = null
       return
     }
 
     elementToInsert = getElementAndRemove(newUiSchema, item.path)
 
     // Adjust target path if removal shifted indices in the same parent
-    if (draggedOverPath.value) {
-      const sameParent = item.path.length === draggedOverPath.value.length &&
-                         item.path.slice(0, -1).every((v, i) => v === draggedOverPath.value[i])
+    if (dropInfo.path) {
+      const sameParent = item.path.length === dropInfo.path.length &&
+                         item.path.slice(0, -1).every((v, i) => v === dropInfo.path[i])
 
       if (sameParent) {
         const oldIndex = item.path[item.path.length - 1]
-        const targetIndex = draggedOverPath.value[draggedOverPath.value.length - 1]
+        const targetIndex = dropInfo.path[dropInfo.path.length - 1]
         if (oldIndex < targetIndex) {
-          draggedOverPath.value[draggedOverPath.value.length - 1]--
+          dropInfo.path[dropInfo.path.length - 1]--
         }
       }
     }
   }
 
   // Find where to insert in the potentially modified newUiSchema
-  if (!draggedOverPath.value) {
+  if (!dropInfo.path) {
     newUiSchema.elements.push(elementToInsert)
     selectedPath.value = [newUiSchema.elements.length - 1]
   } else {
-    const path = draggedOverPath.value
+    const path = dropInfo.path
     let parent = newUiSchema
     for (let i = 0; i < path.length - 1; i++) {
       parent = parent.elements[path[i]]
     }
     const index = path[path.length - 1]
 
-    if (dropPosition.value === 'inside') {
+    if (dropInfo.position === 'inside') {
       const target = parent.elements[index]
       if (!target.elements) target.elements = []
       target.elements.push(elementToInsert)
       selectedPath.value = [...path, target.elements.length - 1]
     } else {
-      const insertIndex = dropPosition.value === 'bottom' ? index + 1 : index
+      const insertIndex = dropInfo.position === 'bottom' ? index + 1 : index
       parent.elements.splice(insertIndex, 0, elementToInsert)
       selectedPath.value = [...path.slice(0, -1), insertIndex]
     }
@@ -613,6 +720,7 @@ const onCanvasDrop = (event) => {
   isDragging.value = false
   draggedItem.value = null
   draggedOverPath.value = null
+  lastTarget.value = null
 }
 
 const updateFieldId = (newId) => {

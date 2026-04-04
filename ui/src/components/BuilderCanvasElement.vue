@@ -201,30 +201,62 @@ const onDragOver = (event) => {
   let targetPath = props.path
 
   if (isLayout.value) {
-     const isEmpty = !props.element.elements || props.element.elements.length === 0
-     if (props.element.type === 'HorizontalLayout') {
-        if (relativeX < rect.width * 0.2) {
-          position = 'top'
-        } else if (relativeX > rect.width * 0.8) {
-          position = 'bottom'
-        } else {
-          position = 'inside'
+    // Check for gaps between children
+    const container = event.currentTarget.querySelector('.layout-container')
+    if (container && props.element.elements && props.element.elements.length > 0) {
+      const children = Array.from(container.children).filter(c => c.classList.contains('builder-canvas-element'))
+      if (children.length > 0) {
+        let closestIndex = -1
+        let minDistance = Infinity
+        let pos = 'bottom'
+
+        children.forEach((child, index) => {
+          const cRect = child.getBoundingClientRect()
+          const dTop = Math.abs(event.clientY - cRect.top)
+          const dBottom = Math.abs(event.clientY - cRect.bottom)
+          const dLeft = Math.abs(event.clientX - cRect.left)
+          const dRight = Math.abs(event.clientX - cRect.right)
+
+          if (props.element.type === 'HorizontalLayout') {
+            if (dLeft < minDistance) { minDistance = dLeft; closestIndex = index; pos = 'top'; }
+            if (dRight < minDistance) { minDistance = dRight; closestIndex = index; pos = 'bottom'; }
+          } else {
+            if (dTop < minDistance) { minDistance = dTop; closestIndex = index; pos = 'top'; }
+            if (dBottom < minDistance) { minDistance = dBottom; closestIndex = index; pos = 'bottom'; }
+          }
+        })
+
+        // If we are very close to a child's edge, target that gap
+        if (minDistance < 30) {
+          emit('drag-over-update', { path: [...props.path, closestIndex], position: pos })
+          return
         }
-     } else {
-        if (relativeY < rect.height * 0.2) {
-          position = 'top'
-        } else if (relativeY > rect.height * 0.8) {
-          position = 'bottom'
-        } else {
-          position = 'inside'
-        }
-     }
+      }
+    }
+
+    if (props.element.type === 'HorizontalLayout') {
+      if (relativeX < rect.width * 0.2) {
+        position = 'top'
+      } else if (relativeX > rect.width * 0.8) {
+        position = 'bottom'
+      } else {
+        position = 'inside'
+      }
+    } else {
+      if (relativeY < rect.height * 0.2) {
+        position = 'top'
+      } else if (relativeY > rect.height * 0.8) {
+        position = 'bottom'
+      } else {
+        position = 'inside'
+      }
+    }
   } else {
-     if (props.parentType === 'HorizontalLayout') {
-       position = relativeX < rect.width / 2 ? 'top' : 'bottom'
-     } else {
-       position = relativeY < rect.height / 2 ? 'top' : 'bottom'
-     }
+    if (props.parentType === 'HorizontalLayout') {
+      position = relativeX < rect.width / 2 ? 'top' : 'bottom'
+    } else {
+      position = relativeY < rect.height / 2 ? 'top' : 'bottom'
+    }
   }
 
   emit('drag-over-update', { path: targetPath, position })
