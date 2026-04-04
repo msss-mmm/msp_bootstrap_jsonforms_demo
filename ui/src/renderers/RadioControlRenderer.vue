@@ -5,18 +5,20 @@
     :description="control.description"
     :required="control.required"
     :errors="control.errors"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
   >
     <el-radio-group
       :model-value="control.data"
       :disabled="!control.enabled"
-      :class="{ 'is-vertical': control.uischema.options?.orientation === 'vertical' }"
-      @change="val => handleChange(control.path, val)"
+      :class="{ 'is-horizontal': control.uischema.options?.orientation === 'horizontal' }"
+      @update:model-value="val => handleChange(control.path, val)"
     >
       <el-radio
-        v-for="option in options"
+        v-for="option in control.schema.enum"
         :key="option"
         :label="option"
-        :style="control.uischema.options?.orientation === 'vertical' ? 'margin-bottom: 8px; margin-right: 0;' : ''"
+        :value="option"
       >
         {{ option }}
       </el-radio>
@@ -26,12 +28,13 @@
     v-else
     :label="control.label"
     :model-value="control.data"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
     type="string"
   />
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { rendererProps, useJsonFormsControl } from '@jsonforms/vue'
 import ControlWrapper from './ControlWrapper.vue'
 import ReadOnlyField from '../components/ReadOnlyField.vue'
@@ -41,16 +44,28 @@ const props = defineProps({
 })
 
 const { control, handleChange } = useJsonFormsControl(props)
-
-const options = computed(() => {
-  return control.value.schema.enum || []
-})
 </script>
 
 <style scoped>
-.el-radio-group.is-vertical {
+.el-radio-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 8px;
+}
+
+.el-radio-group.is-horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+:deep(.el-radio) {
+  margin-right: 0;
+  height: auto;
+}
+
+.is-horizontal :deep(.el-radio) {
+  margin-right: 0;
 }
 </style>

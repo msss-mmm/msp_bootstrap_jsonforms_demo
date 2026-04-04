@@ -1,12 +1,22 @@
 <template>
-  <div class="document-type-control">
-    <span class="document-type-label">Document Type: </span>
-    <span class="document-type-value">{{ control.data || control.uischema.label || 'N/A' }}</span>
-  </div>
+  <control-wrapper
+    :label="control.label"
+    :description="control.description"
+    :required="control.required"
+    :errors="control.errors"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
+    class="document-type-control"
+  >
+    <div class="document-type-value">
+      {{ control.data || 'NOT SPECIFIED' }}
+    </div>
+  </control-wrapper>
 </template>
 
 <script setup>
 import { rendererProps, useJsonFormsControl } from '@jsonforms/vue'
+import ControlWrapper from './ControlWrapper.vue'
 
 const props = defineProps({
   ...rendererProps()
@@ -16,19 +26,16 @@ const { control } = useJsonFormsControl(props)
 </script>
 
 <style scoped>
-.document-type-control {
+.document-type-value {
   font-size: 10px;
   color: #909399;
-  margin-bottom: 5px;
-  line-height: 1;
-}
-.document-type-label {
-  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 @media print {
-  .document-type-control {
-    color: #000;
+  .document-type-value {
+    color: #000 !important;
   }
 }
 </style>
