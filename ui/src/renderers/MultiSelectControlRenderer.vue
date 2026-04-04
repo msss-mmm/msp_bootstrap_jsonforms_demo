@@ -5,18 +5,20 @@
     :description="control.description"
     :required="control.required"
     :errors="control.errors"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
   >
     <el-checkbox-group
-      :model-value="control.data || []"
+      :model-value="control.data"
       :disabled="!control.enabled"
-      :class="{ 'is-vertical': control.uischema.options?.orientation !== 'horizontal' }"
-      @change="val => handleChange(control.path, val)"
+      :class="{ 'is-horizontal': control.uischema.options?.orientation === 'horizontal' }"
+      @update:model-value="val => handleChange(control.path, val)"
     >
       <el-checkbox
-        v-for="option in options"
+        v-for="option in (control.schema.items?.enum || [])"
         :key="option"
         :label="option"
-        :style="control.uischema.options?.orientation !== 'horizontal' ? 'margin-bottom: 8px; margin-right: 0;' : ''"
+        :value="option"
       >
         {{ option }}
       </el-checkbox>
@@ -26,12 +28,13 @@
     v-else
     :label="control.label"
     :model-value="control.data"
-    type="array"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
+    type="string"
   />
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { rendererProps, useJsonFormsControl } from '@jsonforms/vue'
 import ControlWrapper from './ControlWrapper.vue'
 import ReadOnlyField from '../components/ReadOnlyField.vue'
@@ -41,16 +44,28 @@ const props = defineProps({
 })
 
 const { control, handleChange } = useJsonFormsControl(props)
-
-const options = computed(() => {
-  return control.value.schema.items?.enum || []
-})
 </script>
 
 <style scoped>
-.el-checkbox-group.is-vertical {
+.el-checkbox-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 8px;
+}
+
+.el-checkbox-group.is-horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+:deep(.el-checkbox) {
+  margin-right: 0;
+  height: auto;
+}
+
+.is-horizontal :deep(.el-checkbox) {
+  margin-right: 0;
 }
 </style>

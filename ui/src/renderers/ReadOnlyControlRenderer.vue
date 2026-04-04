@@ -3,6 +3,8 @@
     :label="control.label"
     :model-value="control.data"
     :type="control.schema?.type"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
   />
 </template>
 

@@ -1,6 +1,8 @@
 <template>
   <control-wrapper
     :label="label"
+    :label-position="labelPosition"
+    :label-width="labelWidth"
     :class="['read-only-field', customClass]"
   >
     <div class="read-only-item-wrapper">
@@ -34,7 +36,9 @@ const props = defineProps({
     default: 'string'
   },
   placeholder: String,
-  customClass: String
+  customClass: String,
+  labelPosition: String,
+  labelWidth: String
 })
 
 const isEmpty = computed(() => {

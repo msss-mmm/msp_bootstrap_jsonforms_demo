@@ -1,8 +1,9 @@
 <template>
   <read-only-field
-    :label="'Mixture Record Number'"
+    :label="control.label"
     :model-value="control.data"
-    type="string"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
     custom-class="mixture-record-number-control"
   />
 </template>
@@ -17,7 +18,3 @@ const props = defineProps({
 
 const { control } = useJsonFormsControl(props)
 </script>
-
-<style scoped>
-/* Scoped style specifically for MRN if not already handled by custom-class */
-</style>

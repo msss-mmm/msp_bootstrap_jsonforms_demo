@@ -1,10 +1,11 @@
 <template>
   <control-wrapper
-    v-if="control.enabled"
     :label="control.label"
     :description="control.description"
     :required="control.required"
     :errors="control.errors"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
   >
     <capture-renderer
       :model-value="control.data"
@@ -13,18 +14,12 @@
       @update:model-value="val => handleChange(control.path, val)"
     />
   </control-wrapper>
-  <capture-renderer
-    v-else
-    :model-value="control.data"
-    :disabled="true"
-    :plain-text="true"
-  />
 </template>
 
 <script setup>
 import { rendererProps, useJsonFormsControl } from '@jsonforms/vue'
-import CaptureRenderer from '../components/CaptureRenderer.vue'
 import ControlWrapper from './ControlWrapper.vue'
+import CaptureRenderer from '../components/CaptureRenderer.vue'
 
 const props = defineProps({
   ...rendererProps()

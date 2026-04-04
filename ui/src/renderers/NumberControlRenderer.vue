@@ -5,6 +5,8 @@
     :description="control.description"
     :required="control.required"
     :errors="control.errors"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
   >
     <el-input-number
       :model-value="control.data"
@@ -21,6 +23,8 @@
     v-else
     :label="control.label"
     :model-value="control.data"
+    :label-position="control.uischema.options?.labelPosition"
+    :label-width="control.uischema.options?.labelWidth"
     type="number"
   />
 </template>

@@ -88,6 +88,17 @@
               <el-input v-model="selectedItem.description" @input="updateSchema" />
             </el-form-item>
 
+            <el-divider>Label Settings</el-divider>
+            <el-form-item label="Label Position">
+              <el-select v-model="selectedItem.options.labelPosition" @change="updateUiSchema" style="width: 100%" size="small">
+                <el-option label="Top" value="top" />
+                <el-option label="Left" value="left" />
+              </el-select>
+            </el-form-item>
+            <el-form-item v-if="selectedItem.options.labelPosition === 'left'" label="Label Width (e.g. 150px, 10em)">
+              <el-input v-model="selectedItem.options.labelWidth" @input="updateUiSchema" size="small" placeholder="Default: auto" />
+            </el-form-item>
+
             <el-form-item v-if="selectedItem.options.type === 'Title'" label="Title Variant">
               <el-select v-model="selectedItem.options.variant" @change="updateUiSchema" style="width: 100%" size="small">
                 <el-option label="H1 (Heading 1)" value="h1" />
