@@ -25,6 +25,11 @@
         <el-table :data="activeDocuments" style="width: 100%" stripe border>
           <el-table-column prop="id" label="#" width="80" />
           <el-table-column prop="title" label="Title" />
+          <el-table-column prop="mixture_record_number" label="Record #" width="150">
+            <template #default="scope">
+              {{ scope.row.mixture_record_number || '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="template_name" label="Template" />
           <el-table-column label="Operator" width="100" align="center">
             <template #default="scope">
@@ -128,6 +133,11 @@
         <el-table :data="archivedDocuments" style="width: 100%" stripe border>
           <el-table-column prop="id" label="#" width="80" />
           <el-table-column prop="title" label="Title" />
+          <el-table-column prop="mixture_record_number" label="Record #" width="150">
+            <template #default="scope">
+              {{ scope.row.mixture_record_number || '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="template_name" label="Template" />
           <el-table-column label="Operator" width="100" align="center">
             <template #default="scope">

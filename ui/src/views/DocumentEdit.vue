@@ -323,11 +323,7 @@ const handleMixtureRecordNumber = async (uischema, currentData) => {
       })
 
       if (res.data.mrn) {
-        formData.value = {
-          ...formData.value,
-          [mrnFieldId]: res.data.mrn
-        }
-        hasChanges.value = false // Already saved by backend
+        currentData[mrnFieldId] = res.data.mrn
       }
     } catch (error) {
       console.error('Failed to claim mixture record number:', error)

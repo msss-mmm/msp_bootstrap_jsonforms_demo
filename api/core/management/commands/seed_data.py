@@ -48,4 +48,40 @@ class Command(BaseCommand):
             status="Active"
         )
 
+        # 2. Mixture Record Template
+        mr_schema = {
+            "type": "object",
+            "properties": {
+                "doc_type": { "type": "string" },
+                "mrn": { "type": "string" },
+                "notes": { "type": "string" }
+            }
+        }
+        mr_uischema = {
+            "type": "VerticalLayout",
+            "elements": [
+                {
+                    "type": "Control",
+                    "scope": "#/properties/doc_type",
+                    "label": "MR",
+                    "options": { "type": "DocumentType" }
+                },
+                {
+                    "type": "Control",
+                    "scope": "#/properties/mrn",
+                    "label": "Mixture Record Number",
+                    "options": { "type": "MixtureRecordNumber" }
+                },
+                { "type": "Control", "scope": "#/properties/notes" }
+            ]
+        }
+
+        Template.objects.create(
+            name="Mixture Record Template",
+            description="Template with MRN",
+            schema=mr_schema,
+            uischema=mr_uischema,
+            status="Active"
+        )
+
         self.stdout.write(self.style.SUCCESS('Successfully seeded JSON Forms templates and documents'))
