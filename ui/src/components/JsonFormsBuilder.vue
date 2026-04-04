@@ -180,6 +180,8 @@
           <box-model-editor
             v-model:margin="selectedItem.options.margin"
             v-model:padding="selectedItem.options.padding"
+            :default-margin="selectedItem.defaultMargin"
+            :default-padding="selectedItem.defaultPadding"
             @update:margin="updateUiSchema"
             @update:padding="updateUiSchema"
           />
@@ -352,9 +354,13 @@ const selectedItem = computed(() => {
     ? { top: '10px', right: '15px', bottom: '10px', left: '15px' }
     : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
 
+  const defaultPadding = uielem.type === 'Group'
+    ? { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+    : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+
   const options = {
-    margin: defaultMargin,
-    padding: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+    margin: uielem.options?.margin || {},
+    padding: uielem.options?.padding || {},
     ...(uielem.options || {})
   }
 
@@ -371,7 +377,9 @@ const selectedItem = computed(() => {
     hasDefault: schelem.default !== undefined,
     readOnly: schelem.readOnly || false,
     enum: enums,
-    options
+    options,
+    defaultMargin,
+    defaultPadding
   }
 })
 
@@ -455,10 +463,7 @@ const onCanvasDrop = (event) => {
         type: item.type,
         label: item.label,
         elements: [],
-        options: {
-          margin,
-          padding: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
-        }
+        options: {}
       }
     } else {
       const id = `field_${Date.now()}`

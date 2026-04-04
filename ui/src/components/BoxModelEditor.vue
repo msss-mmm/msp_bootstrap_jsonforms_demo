@@ -26,17 +26,41 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps({
-  margin: { type: Object, default: () => ({ top: '0px', right: '0px', bottom: '0px', left: '0px' }) },
-  padding: { type: Object, default: () => ({ top: '0px', right: '0px', bottom: '0px', left: '0px' }) }
+  margin: { type: Object, default: () => ({}) },
+  padding: { type: Object, default: () => ({}) },
+  defaultMargin: { type: Object, default: () => ({ top: '0px', right: '0px', bottom: '0px', left: '0px' }) },
+  defaultPadding: { type: Object, default: () => ({ top: '0px', right: '0px', bottom: '0px', left: '0px' }) }
 })
 
 const emit = defineEmits(['update:margin', 'update:padding'])
 
-const internalMargin = ref({ ...props.margin })
-const internalPadding = ref({ ...props.padding })
+const getInitialValue = (val, defaults) => {
+  return {
+    top: val?.top ?? defaults.top,
+    right: val?.right ?? defaults.right,
+    bottom: val?.bottom ?? defaults.bottom,
+    left: val?.left ?? defaults.left
+  }
+}
 
-watch(() => props.margin, (val) => { internalMargin.value = { ...val } }, { deep: true })
-watch(() => props.padding, (val) => { internalPadding.value = { ...val } }, { deep: true })
+const internalMargin = ref(getInitialValue(props.margin, props.defaultMargin))
+const internalPadding = ref(getInitialValue(props.padding, props.defaultPadding))
+
+watch(() => props.margin, (val) => {
+  internalMargin.value = getInitialValue(val, props.defaultMargin)
+}, { deep: true })
+
+watch(() => props.padding, (val) => {
+  internalPadding.value = getInitialValue(val, props.defaultPadding)
+}, { deep: true })
+
+watch(() => props.defaultMargin, (newDefaults) => {
+  internalMargin.value = getInitialValue(props.margin, newDefaults)
+}, { deep: true })
+
+watch(() => props.defaultPadding, (newDefaults) => {
+  internalPadding.value = getInitialValue(props.padding, newDefaults)
+}, { deep: true })
 
 const formatValue = (val) => {
   if (!val) return '0px'
