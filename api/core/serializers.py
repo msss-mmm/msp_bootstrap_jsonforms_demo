@@ -15,6 +15,7 @@ class DocumentInstanceSerializer(serializers.ModelSerializer):
     template_name = serializers.ReadOnlyField(source='template.name')
     operator_status = serializers.SerializerMethodField()
     qa_status = serializers.SerializerMethodField()
+    mixture_record_number = serializers.SerializerMethodField()
 
     class Meta:
         model = DocumentInstance
@@ -77,3 +78,34 @@ class DocumentInstanceSerializer(serializers.ModelSerializer):
 
     def get_qa_status(self, obj):
         return self.get_approval_status(obj, 'QAApprove')
+
+    def get_mixture_record_number(self, obj):
+        """
+        Helper to find the mixture record number in the document data.
+        """
+        uischema = obj.template.uischema
+        if not isinstance(uischema, dict):
+            return None
+
+        field_name = None
+
+        def find_mrn_field(element):
+            nonlocal field_name
+            if field_name or not isinstance(element, dict):
+                return
+
+            if element.get('options', {}).get('type') == 'MixtureRecordNumber':
+                scope = element.get('scope')
+                if scope and scope.startswith('#/properties/'):
+                    field_name = scope.split('/')[-1]
+
+            if 'elements' in element and isinstance(element['elements'], list):
+                for child in element['elements']:
+                    find_mrn_field(child)
+
+        find_mrn_field(uischema)
+
+        if field_name:
+            return obj.data.get(field_name)
+
+        return None
