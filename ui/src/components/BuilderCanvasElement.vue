@@ -65,10 +65,10 @@
       <!-- Non-layout Control -->
        <div v-else class="control-container" :data-field-id="fieldId" :class="{ 'is-interactive': isInteractiveControl }">
          <json-forms
-           v-if="schema && schema.properties"
+           v-if="schema && (schema.properties || element.type === 'Control')"
            :data="testData"
            :schema="controlSchema"
-           :uischema="element"
+           :uischema="{ ...element, options: { ...element.options, isBuilder: true } }"
            :renderers="renderers"
            @change="handleCanvasChange"
          />
