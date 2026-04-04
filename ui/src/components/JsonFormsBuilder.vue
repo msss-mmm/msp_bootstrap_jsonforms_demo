@@ -455,6 +455,10 @@ const onCanvasDrop = (event) => {
   let elementToInsert
   if (item.source === 'palette') {
     if (['VerticalLayout', 'HorizontalLayout', 'Group'].includes(item.type)) {
+      const margin = item.type === 'Group'
+        ? { top: '10px', right: '15px', bottom: '10px', left: '15px' }
+        : { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+
       elementToInsert = {
         type: item.type,
         label: item.label,
