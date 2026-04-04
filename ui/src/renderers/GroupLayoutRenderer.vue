@@ -39,14 +39,14 @@ const style = computed(() => {
 
   return {
     position: 'relative',
-    marginTop: margin.top || '15px',
-    marginRight: margin.right || '0px',
-    marginBottom: margin.bottom || '15px',
-    marginLeft: margin.left || '0px',
-    paddingTop: padding.top || '15px',
-    paddingRight: padding.right || '15px',
-    paddingBottom: padding.bottom || '15px',
-    paddingLeft: padding.left || '15px',
+    marginTop: margin.top || '10px',
+    marginRight: margin.right || '15px',
+    marginBottom: margin.bottom || '10px',
+    marginLeft: margin.left || '15px',
+    paddingTop: padding.top || '0px',
+    paddingRight: padding.right || '0px',
+    paddingBottom: padding.bottom || '0px',
+    paddingLeft: padding.left || '0px',
     border: `${options.borderWidth || '1'}px solid ${options.borderColor || '#dcdfe6'}`,
     borderRadius: `${options.borderRadius || '4'}px`
   }
