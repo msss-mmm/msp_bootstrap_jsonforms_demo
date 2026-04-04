@@ -108,6 +108,19 @@
               </el-select>
             </el-form-item>
 
+            <el-form-item v-if="selectedItem.options.type === 'Calculate'" label="Calculation">
+              <el-input
+                v-model="selectedItem.options.calculation"
+                type="textarea"
+                :rows="4"
+                placeholder="e.g. data.field_1 + data.field_2"
+                @input="updateUiSchema"
+              />
+              <div style="font-size: 12px; color: #909399; margin-top: 5px;">
+                Use <code>data.FIELD_ID</code> to refer to other fields.
+              </div>
+            </el-form-item>
+
             <template v-if="selectedItem.options.format === 'radio' || selectedItem.options.format === 'multi-select'">
               <el-divider>Options</el-divider>
               <div v-for="(opt, idx) in selectedItem.enum" :key="idx" style="display: flex; gap: 5px; margin-bottom: 5px;">
@@ -213,7 +226,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import BuilderCanvasElement from './BuilderCanvasElement.vue'
 import BoxModelEditor from './BoxModelEditor.vue'
-import { Edit, Document, Check, Calendar, Timer, AlarmClock, Delete, Connection, Menu, List, CircleCheck, Finished, Plus, Trophy, CollectionTag } from '@element-plus/icons-vue'
+import { Edit, Document, Check, Calendar, Timer, AlarmClock, Delete, Connection, Menu, List, CircleCheck, Finished, Plus, Trophy, CollectionTag, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps({
@@ -325,6 +338,7 @@ const controlItems = [
   { label: 'Timer', type: 'object', options: { type: 'Timer' }, icon: 'AlarmClock' },
   { label: 'External Capture', type: 'object', options: { type: 'ExternalCapture' }, icon: 'Download' },
   { label: 'Title', type: 'string', options: { type: 'Title' }, icon: 'Trophy' },
+  { label: 'Calculate', type: 'string', options: { type: 'Calculate' }, icon: 'Cpu' },
   { label: 'Document Type', type: 'string', options: { type: 'DocumentType' }, icon: 'CollectionTag' },
   { label: 'Mixture Record Number', type: 'string', options: { type: 'MixtureRecordNumber' }, icon: 'List' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
@@ -622,6 +636,8 @@ const onCanvasDrop = (event) => {
       } else if (item.options?.type === 'DocumentType') {
         newSchema.properties[id].readOnly = true
       } else if (item.options?.type === 'MixtureRecordNumber') {
+        newSchema.properties[id].readOnly = true
+      } else if (item.options?.type === 'Calculate') {
         newSchema.properties[id].readOnly = true
       }
 
