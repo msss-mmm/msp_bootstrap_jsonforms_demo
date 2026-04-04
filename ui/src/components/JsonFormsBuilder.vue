@@ -644,7 +644,7 @@ const onCanvasDrop = (event) => {
         type: 'Control',
         scope: id ? `#/properties/${id}` : undefined,
         label: item.label,
-        options: item.options ? { ...item.options, isBuilder: true } : { isBuilder: true }
+        options: item.options ? { ...item.options } : {}
       }
 
       if (item.options?.type === 'HorizontalLine') {
