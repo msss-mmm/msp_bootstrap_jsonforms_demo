@@ -17,6 +17,16 @@ import TitleControlRenderer from './TitleControlRenderer.vue'
 import DocumentTypeControlRenderer from './DocumentTypeControlRenderer.vue'
 import MixtureRecordNumberControlRenderer from './MixtureRecordNumberControlRenderer.vue'
 import ReadOnlyControlRenderer from './ReadOnlyControlRenderer.vue'
+import HorizontalLineRenderer from './HorizontalLineRenderer.vue'
+import SpaceRenderer from './SpaceRenderer.vue'
+
+const isHorizontalLine = (uischema) => {
+  return uischema.type === 'Control' && uischema.options?.type === 'HorizontalLine'
+}
+
+const isSpace = (uischema) => {
+  return uischema.type === 'Control' && uischema.options?.type === 'Space'
+}
 
 const isApprovalControl = (uischema) => {
   return isControl(uischema) && (uischema.options?.type === 'OperatorApprove' || uischema.options?.type === 'QAApprove')
@@ -58,6 +68,8 @@ export const elementRenderers = [
   { tester: rankWith(100, isTitleControl), renderer: TitleControlRenderer },
   { tester: rankWith(100, isDocumentTypeControl), renderer: DocumentTypeControlRenderer },
   { tester: rankWith(100, isMixtureRecordNumberControl), renderer: MixtureRecordNumberControlRenderer },
+  { tester: rankWith(100, isHorizontalLine), renderer: HorizontalLineRenderer },
+  { tester: rankWith(100, isSpace), renderer: SpaceRenderer },
    { tester: rankWith(10, isStringControl), renderer: StringControlRenderer },
    { tester: rankWith(20, isNumberControl), renderer: NumberControlRenderer },
    { tester: rankWith(20, isBooleanControl), renderer: BooleanControlRenderer },
@@ -76,6 +88,8 @@ export const readOnlyRenderers = [
   { tester: rankWith(200, isTitleControl), renderer: TitleControlRenderer },
   { tester: rankWith(200, isDocumentTypeControl), renderer: DocumentTypeControlRenderer },
   { tester: rankWith(200, isMixtureRecordNumberControl), renderer: MixtureRecordNumberControlRenderer },
+  { tester: rankWith(200, isHorizontalLine), renderer: HorizontalLineRenderer },
+  { tester: rankWith(200, isSpace), renderer: SpaceRenderer },
   { tester: rankWith(150, isControl), renderer: ReadOnlyControlRenderer },
   { tester: rankWith(10, uiTypeIs('VerticalLayout')), renderer: VerticalLayoutRenderer },
   { tester: rankWith(10, uiTypeIs('HorizontalLayout')), renderer: HorizontalLayoutRenderer },

@@ -78,24 +78,24 @@
       <div v-if="selectedItem" class="property-form">
         <el-form label-position="top">
           <template v-if="selectedItem.isControl">
-            <el-form-item label="Field ID (Required)">
+            <el-form-item v-if="!selectedItem.isDecorative" label="Field ID (Required)">
               <el-input v-model="selectedItem.id" @input="updateFieldId" />
             </el-form-item>
-            <el-form-item label="Label">
+            <el-form-item v-if="!selectedItem.isDecorative" label="Label">
               <el-input v-model="selectedItem.label" @input="updateUiSchema" />
             </el-form-item>
-            <el-form-item label="Description">
+            <el-form-item v-if="!selectedItem.isDecorative" label="Description">
               <el-input v-model="selectedItem.description" @input="updateSchema" />
             </el-form-item>
 
-            <el-divider>Label Settings</el-divider>
-            <el-form-item label="Label Position">
+            <el-divider v-if="!selectedItem.isDecorative">Label Settings</el-divider>
+            <el-form-item v-if="!selectedItem.isDecorative" label="Label Position">
               <el-select v-model="selectedItem.options.labelPosition" @change="updateUiSchema" style="width: 100%" size="small">
                 <el-option label="Top" value="top" />
                 <el-option label="Left" value="left" />
               </el-select>
             </el-form-item>
-            <el-form-item v-if="selectedItem.options.labelPosition === 'left'" label="Label Width (e.g. 150px, 10em)">
+            <el-form-item v-if="selectedItem.options.labelPosition === 'left' && !selectedItem.isDecorative" label="Label Width (e.g. 150px, 10em)">
               <el-input v-model="selectedItem.options.labelWidth" @input="updateUiSchema" size="small" placeholder="Default: auto" />
             </el-form-item>
 
@@ -107,6 +107,15 @@
                 <el-option label="H4 (Heading 4)" value="h4" />
               </el-select>
             </el-form-item>
+
+            <template v-if="selectedItem.options.type === 'HorizontalLine' || selectedItem.options.type === 'Space'">
+               <el-form-item label="Width (e.g. 100%, 200px)">
+                 <el-input v-model="selectedItem.options.width" @input="updateUiSchema" size="small" />
+               </el-form-item>
+               <el-form-item label="Height (e.g. 1px, 20px)">
+                 <el-input v-model="selectedItem.options.height" @input="updateUiSchema" size="small" />
+               </el-form-item>
+            </template>
 
             <template v-if="selectedItem.options.format === 'radio' || selectedItem.options.format === 'multi-select'">
               <el-divider>Options</el-divider>
@@ -128,11 +137,11 @@
               <el-checkbox :model-value="selectedItem.options?.isCreationDate" @change="handleCreationDateChange">Document Creation Date</el-checkbox>
             </el-form-item>
 
-            <el-form-item v-if="!selectedItem.options?.isCreationDate">
+            <el-form-item v-if="!selectedItem.options?.isCreationDate && !selectedItem.isDecorative">
               <el-checkbox v-model="selectedItem.readOnly" @change="updateSchema">Read Only</el-checkbox>
             </el-form-item>
 
-            <el-form-item v-if="!selectedItem.options?.isCreationDate">
+            <el-form-item v-if="!selectedItem.options?.isCreationDate && !selectedItem.isDecorative">
               <template #label>
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                   <span>{{ selectedItem.readOnly ? 'Constant Value' : 'Default Value' }}</span>
@@ -187,8 +196,9 @@
             </template>
           </template>
 
-          <el-divider>Box Model</el-divider>
+          <el-divider v-if="selectedItem.options.type !== 'Space'">Box Model</el-divider>
           <box-model-editor
+            v-if="selectedItem.options.type !== 'Space'"
             v-model:margin="selectedItem.options.margin"
             v-model:padding="selectedItem.options.padding"
             :default-margin="selectedItem.defaultMargin"
@@ -213,7 +223,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import BuilderCanvasElement from './BuilderCanvasElement.vue'
 import BoxModelEditor from './BoxModelEditor.vue'
-import { Edit, Document, Check, Calendar, Timer, AlarmClock, Delete, Connection, Menu, List, CircleCheck, Finished, Plus, Trophy, CollectionTag } from '@element-plus/icons-vue'
+import { Edit, Document, Check, Calendar, Timer, AlarmClock, Delete, Connection, Menu, List, CircleCheck, Finished, Plus, Trophy, CollectionTag, Minus, DCaret } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps({
@@ -328,7 +338,9 @@ const controlItems = [
   { label: 'Document Type', type: 'string', options: { type: 'DocumentType' }, icon: 'CollectionTag' },
   { label: 'Mixture Record Number', type: 'string', options: { type: 'MixtureRecordNumber' }, icon: 'List' },
   { label: 'Operator Approve', type: 'object', options: { type: 'OperatorApprove' }, icon: 'Medal' },
-  { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' }
+  { label: 'QA Approve', type: 'object', options: { type: 'QAApprove' }, icon: 'Medal' },
+  { label: 'Horizontal Line', type: 'none', options: { type: 'HorizontalLine' }, icon: 'Minus' },
+  { label: 'Space', type: 'none', options: { type: 'Space' }, icon: 'DCaret' }
 ]
 
 const labelPositions = [
@@ -362,7 +374,7 @@ const selectedItem = computed(() => {
 
   const isControl = uielem.type === 'Control'
   const fieldId = isControl && uielem.scope ? uielem.scope.split('/').pop() : ''
-  const schelem = isControl ? (props.schema?.properties?.[fieldId] || {}) : {}
+  const schelem = isControl && fieldId ? (props.schema?.properties?.[fieldId] || {}) : {}
 
   const defaultMargin = uielem.type === 'Group'
     ? { top: '10px', right: '15px', bottom: '10px', left: '15px' }
@@ -393,7 +405,8 @@ const selectedItem = computed(() => {
     enum: enums,
     options,
     defaultMargin,
-    defaultPadding
+    defaultPadding,
+    isDecorative: ['HorizontalLine', 'Space'].includes(options.type)
   }
 })
 
@@ -583,56 +596,64 @@ const onCanvasDrop = (event) => {
         options: {}
       }
     } else {
-      const id = `field_${Date.now()}`
-      newSchema.properties[id] = {
-        type: item.type,
-        description: '',
-        readOnly: false
-      }
-      if (item.format) newSchema.properties[id].format = item.format
-
-      // Default options for new Radio/Multi-select
-      if (item.options?.format === 'radio') {
-        newSchema.properties[id].enum = ['Option 1', 'Option 2']
-      } else if (item.options?.format === 'multi-select') {
-        newSchema.properties[id].items = { type: 'string', enum: ['Option 1', 'Option 2'] }
-        newSchema.properties[id].uniqueItems = true
-      }
-      if (item.type === 'object' && item.options) {
-        if (item.options.type === 'Timer') {
-          newSchema.properties[id].properties = {
-            startTime: { type: 'string' },
-            stopTime: { type: 'string' },
-            total: { type: 'string' }
-          }
-        } else if (item.options.type === 'ExternalCapture') {
-          newSchema.properties[id].properties = {
-            source: { type: 'string' },
-            value: { type: 'string' },
-            timestamp: { type: 'string' }
-          }
-        } else {
-          newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
+      const id = item.type === 'none' ? null : `field_${Date.now()}`
+      if (id) {
+        newSchema.properties[id] = {
+          type: item.type,
+          description: '',
+          readOnly: false
         }
-      }
+        if (item.format) newSchema.properties[id].format = item.format
 
-      // Title, Document Type & MRN defaults
-      if (item.options?.type === 'Title') {
-        newSchema.properties[id].readOnly = true
-      } else if (item.options?.type === 'DocumentType') {
-        newSchema.properties[id].readOnly = true
-      } else if (item.options?.type === 'MixtureRecordNumber') {
-        newSchema.properties[id].readOnly = true
+        // Default options for new Radio/Multi-select
+        if (item.options?.format === 'radio') {
+          newSchema.properties[id].enum = ['Option 1', 'Option 2']
+        } else if (item.options?.format === 'multi-select') {
+          newSchema.properties[id].items = { type: 'string', enum: ['Option 1', 'Option 2'] }
+          newSchema.properties[id].uniqueItems = true
+        }
+        if (item.type === 'object' && item.options) {
+          if (item.options.type === 'Timer') {
+            newSchema.properties[id].properties = {
+              startTime: { type: 'string' },
+              stopTime: { type: 'string' },
+              total: { type: 'string' }
+            }
+          } else if (item.options.type === 'ExternalCapture') {
+            newSchema.properties[id].properties = {
+              source: { type: 'string' },
+              value: { type: 'string' },
+              timestamp: { type: 'string' }
+            }
+          } else {
+            newSchema.properties[id].properties = { name: { type: 'string' }, timestamp: { type: 'string' } }
+          }
+        }
+
+        // Title, Document Type & MRN defaults
+        if (item.options?.type === 'Title') {
+          newSchema.properties[id].readOnly = true
+        } else if (item.options?.type === 'DocumentType') {
+          newSchema.properties[id].readOnly = true
+        } else if (item.options?.type === 'MixtureRecordNumber') {
+          newSchema.properties[id].readOnly = true
+        }
       }
 
       elementToInsert = {
         type: 'Control',
-        scope: `#/properties/${id}`,
+        scope: id ? `#/properties/${id}` : undefined,
         label: item.label,
-        options: item.options ? { ...item.options } : {}
+        options: item.options ? { ...item.options, isBuilder: true } : { isBuilder: true }
       }
 
-      if (item.options?.type === 'Title') {
+      if (item.options?.type === 'HorizontalLine') {
+        elementToInsert.options.width = '100%'
+        elementToInsert.options.height = '1px'
+      } else if (item.options?.type === 'Space') {
+        elementToInsert.options.width = '100%'
+        elementToInsert.options.height = '20px'
+      } else if (item.options?.type === 'Title') {
         elementToInsert.options.variant = 'h1'
       }
       if (item.options?.format === 'radio' || item.options?.format === 'multi-select') {
